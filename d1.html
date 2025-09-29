@@ -1,0 +1,1990 @@
+<!--// Fuel cart functionality - Updated with mobil oil brands
+    let fuelCart = {};
+    let fuelTypes = {
+      '1-ltr': 'petrol',
+      '2-ltrs': 'petrol', 
+      '3-ltrs': 'petrol',
+      'jerry-10l': 'petrol'
+    };
+    let mobilBrands = {
+      '1-ltr': 'Mobil 1',
+      '2-ltrs': 'Mobil 1',
+      '3-ltrs': 'Mobil 1',
+      'jerry-10l': 'Mobil 1'
+    };
+    
+    const fuelPrices = {
+      'petrol': { '1-ltr': 120, '2-ltrs': 240, '3-ltrs': 360, 'jerry-10l': 1200 },
+      'diesel': { '1-ltr': 95, '2-ltrs': 190, '3-ltrs': 285, 'jerry-10l': 950 },
+      'mobil': { 
+        '1-ltr': { 'Mobil 1': 850, 'Castrol GTX': 750, 'Shell Helix': 800, 'Valvoline': 720, 'Total Quartz': 680 },
+        '2-ltrs': { 'Mobil 1': 1700, 'Castrol GTX': 1500, 'Shell Helix': 1600, 'Valvoline': 1440, 'Total Quartz': 1360 },
+        '3-ltrs': { 'Mobil 1': 2550, 'Castrol GTX': 2250, 'Shell Helix': 2400, 'Valvoline': 2160, 'Total Quartz': 2040 },
+        'jerry-10l': { 'Mobil 1': 8500, 'Castrol GTX': 7500, 'Shell Helix': 8000, 'Valvoline': 7200, 'Total Quartz': 6800 }
+      }
+    };
+
+    const fuelDisplayNames = {
+      'petrol': '⛽ Petrol',
+      'diesel': '🚛 Diesel', 
+      'mobil': '🛢️ Mobil Oil'
+    };
+
+    function selectFuelType(container, fuelType, price) {
+      // Update fuel type for this container
+      fuelTypes[container] = fuelType;
+      
+      // Update active button styling
+      const buttons = document.querySelectorAll(`[data-container="${container}"]`);
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // Show/hide mobil oil selector
+      const mobilSelector = document.getElementById(`mobil-selector-${container}`);
+      if (fuelType === 'mobil') {
+        mobilSelector.classList.add('active');
+        // Use the selected mobil brand price
+        const selectedBrand = mobilBrands[container];
+        price = fuelPrices.mobil[container][selectedBrand];
+      } else {
+        mobilSelector.classList.remove('active');
+      }
+      
+      // Update price display
+      const priceElement = document.getElementById(`price-${container}`);
+      const containerSize = container.includes('jerry-10l') ? '10L' :
+                           container.includes('3-ltrs') ? '3L' :
+                           container.includes('2-ltrs') ? '2L' : '1L';
+      priceElement.textContent = `₹${price}/${containerSize}`;
+      
+      // Update fuel info
+      const infoElement = document.getElementById(`fuel-info-${container}`);
+      if (fuelType === 'mobil') {
+        infoElement.textContent = `${fuelDisplayNames[fuelType]} - ${mobilBrands[container]} selected`;
+      } else {
+        infoElement.textContent = `${fuelDisplayNames[fuelType]} selected`;
+      }
+      
+      // Update cart if this container has quantity
+      if (fuelCart[container] > 0) {
+        updateCartSummary();
+      }
+    }
+
+    function selectMobilType(container, brand, price) {
+      // Update mobil brand for this container
+      mobilBrands[container] = brand;
+      
+      // Update active button styling
+      const mobilButtons = document.querySelectorAll(`#mobil-selector-${container} .mobil-oil-btn`);
+      mobilButtons.forEach(btn => btn.classList.remove('selected'));
+      event.target.classList.add('selected');
+      
+      // Update price display
+      const priceElement = document.getElementById(`price-${container}`);
+      const containerSize = container.includes('jerry-10l') ? '10L' :
+                           container.includes('3-ltrs') ? '3L' :
+                           container.includes('2-ltrs') ? '2L' : '1L';
+      priceElement.textContent = `₹${price}/${containerSize}`;
+      
+      // Update fuel info
+      const infoElement = document.getElementById(`fuel-info-${container}`);
+      infoElement.textContent = `🛢️ Mobil Oil - ${brand} selected`;
+      
+      // Update cart if this container has quantity
+      if (fuelCart[container] > 0) {
+        updateCartSummary();
+      }
+    }
+
+    function updateQuantity(fuelType, change) {
+      if (!fuelCart[fuelType]) {
+        fuelCart[fuelType] = 0;
+      }
+      
+      fuelCart[fuelType] += change;
+      
+      if (fuelCart[fuelType] < 0) {
+        fuelCart[fuelType] = 0;
+      }
+      
+      // Update display
+      document.getElementById(`qty-${fuelType}`).textContent = fuelCart[fuelType];
+      
+      // Update minus button state
+      const minusBtn = document.querySelector(`[onclick="updateQuantity('${fuelType}', -1)"]`);
+      minusBtn.disabled = fuelCart[fuelType] === 0;
+      
+      // Add visual feedback for selected items
+      const fuelItem = document.getElementById(`fuel-${fuelType}`);
+      if (fuelCart[fuelType] > 0) {
+        fuelItem.classList.add('selected');
+      } else {
+        fuelItem.classList.remove('selected');
+      }
+      
+      updateCartSummary();
+    }
+
+    function updateCartSummary() {
+      const cartSummary = document.getElementById('cart-summary-compact');
+      const cartItems = document.getElementById('cart-items-compact');
+      const cartTotal = document.getElementById('cart-total');
+      
+      // Clear previous items
+      cartItems.innerHTML = '';
+      
+      let totalItems = 0;
+      let totalPrice = 0;
+      let hasItems = false;
+      
+      // Container size names for display
+      const containerNames = {
+        '1-ltr': '1L',
+        '2-ltrs': '2L',
+        '3-ltrs': '3L',
+        'jerry-10l': 'Jerry 10L'
+      };
+      
+      // Add items to cart display
+      for (const [container, quantity] of Object.entries(fuelCart)) {
+        if (quantity > 0) {
+          hasItems = true;
+          totalItems += quantity;
+          const selectedFuelType = fuelTypes[container];
+          
+          let itemPrice;
+          let displayName;
+          
+          if (selectedFuelType === 'mobil') {
+            const selectedBrand = mobilBrands[container];
+            itemPrice = fuelPrices.mobil[container][selectedBrand] * quantity;
+            displayName = `${containerNames[container]} ${selectedBrand}`;
+          } else {
+            itemPrice = fuelPrices[selectedFuelType][container] * quantity;
+            displayName = `${containerNames[container]} ${fuelDisplayNames[selectedFuelType]}`;
+          }
+          
+          totalPrice += itemPrice;
+          
+          const cartItem = document.createElement('div');
+          cartItem.className = 'cart-item-compact';
+          cartItem.innerHTML = `
+            <span>${displayName} ×${quantity}</span>
+            <span>₹${itemPrice}</span>
+          `;
+          cartItems.appendChild(cartItem);
+        }
+      }
+      
+      // Update total
+      if (hasItems) {
+        cartTotal.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span><strong>Total: ${totalItems} containers</strong></span>
+            <span><strong>₹${totalPrice}</strong></span>
+          </div>
+        `;
+      }
+      
+      // Show/hide cart summary
+      cartSummary.style.display = hasItems ? 'block' : 'none';
+    }    .fuel-selection-info {
+      font-size: 0.65rem;
+      color: var(--text-light);
+      margin-top: 2px;
+      font-style: italic;
+    }      // Reset form and cart
+      this.reset();
+      fuelCart = {};
+      fuelTypes = {
+        '1-ltr': 'petrol',
+        '2-ltrs': 'petrol', 
+        '3-ltrs': 'petrol',
+        'jerry-10l': 'petrol'
+      };
+      mobilBrands = {
+        '1-ltr': 'Mobil 1',
+        '2-ltrs': 'Mobil 1',
+        '3-ltrs': 'Mobil 1',
+        'jerry-10l': 'Mobil 1'
+      };
+      updateCartSummary();
+      
+      // Reset quantity displays
+      document.querySelectorAll('.quantity-display-compact').forEach(display => {
+        display.textContent = '0';
+      });
+      
+      // Reset all minus buttons and selected states
+      document.querySelectorAll('.quantity-btn-compact').forEach(btn => {
+        btn.disabled = false;
+      });
+      
+      document.querySelectorAll('.fuel-item-compact').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Reset fuel type selections to petrol
+      document.querySelectorAll('.fuel-type-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.classList.contains('petrol')) {
+          btn.classList.add('active');
+        }
+      });
+      
+      // Hide mobil oil selectors and reset selections
+      document.querySelectorAll('.mobil-oil-selector').forEach(selector => {
+        selector.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.mobil-oil-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.textContent === 'Mobil 1') {
+          btn.classList.add('selected');
+        }
+      });
+      
+      // Reset prices and info texts
+      document.getElementById('price-1-ltr').textContent = '₹120/1L';
+      document.getElementById('price-2-ltrs').textContent = '₹240/2L';
+      document.getElementById('price-3-ltrs').textContent = '₹360/3L';
+      document.getElementById('price-jerry-10l').textContent = '₹1200/10L';
+      
+      document.querySelectorAll('[id^="fuel-info-"]').forEach(info => {
+        info.textContent = 'Petrol selected';
+      });    .fuel-details-compact h4 {
+      font-size: 0.85rem;
+      margin: 0 0 2px 0;
+      font-weight: 600;
+    }
+
+    .fuel-price {
+      font-size: 0.75rem;
+      color: var(--success);
+      font-weight: 600;
+      margin: 0;
+    }    // Function to select category from the cards
+    function selectCategory(category) {
+      const categorySelect = document.getElementById('task-category');
+      
+      // Map display names to form values
+      const categoryMap = {
+        'Fuels': 'fuels',
+        'Vehicles Components': 'components', 
+        'Vehicles Repair': 'mechanic',
+        'Full Service': 'full-service',
+        'EV Service': 'ev-service',
+        'Towing': 'towing',
+        'Roadside': 'roadside'
+      };
+      
+      // Set the selected value
+      categorySelect.value = categoryMap[category] || category.toLowerCase();
+      
+      // Trigger the fuel section toggle
+      toggleFuelSection();
+      
+      // Scroll to form
+      document.querySelector('.task-form-container').scrollIntoView({ 
+        behavior: 'smooth'
+      });
+    }        <div class="category-card" onclick="selectCategory('Vehicles Repair')">
+          <div class="category-icon"> 
+            <i class="fas fa-wrench"></i>
+          </div>
+          <div class="category-name">👨‍🔧 Vehicle Repair</div>
+          <div class="category-desc">Specific repairs & troubleshooting</div>
+        </div>-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petro-Service - List Your Need</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4776E6;
+      --primary-gradient: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
+      --secondary: #FF8C42;
+      --text-dark: #2D3748;
+      --text-light: #718096;
+      --white: #ffffff;
+      --off-white: #F7FAFC;
+      --error: #FF5757;
+      --success: #00C49A;
+      --border-radius: 12px;
+      --shadow: 0 10px 30px rgba(71, 118, 230, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--off-white);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .navbar {
+      background: var(--white);
+      padding: 15px 30px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      color: var(--text-dark);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo span {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-icon {
+      color: var(--primary);
+      font-size: 1.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--text-dark);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+      font-size: 0.95rem;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-link.highlight {
+      background: var(--primary-gradient);
+      color: var(--white);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-weight: 500;
+      box-shadow: 0 4px 15px rgba(71, 118, 230, 0.2);
+    }
+
+    .nav-link.highlight:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(71, 118, 230, 0.3);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .page-title h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .page-title p {
+      color: var(--text-light);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .task-form-container {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+      margin-bottom: 40px;
+    }
+
+    .form-title {
+      margin-bottom: 25px;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-title i {
+      color: var(--primary);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .input-group {
+      margin-bottom: 5px;
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .required::after {
+      content: "*";
+      color: var(--error);
+      margin-left: 2px;
+    }
+
+    .input-field,
+    .textarea-field,
+    .select-field {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus,
+    .textarea-field:focus,
+    .select-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(71, 118, 230, 0.1);
+    }
+
+    .textarea-field {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: var(--white);
+      box-shadow: 0 4px 15px rgba(71, 118, 230, 0.2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(71, 118, 230, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--text-dark);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-secondary:hover {
+      background: #f8f8f8;
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: var(--white);
+    }
+
+    .btn-success:hover {
+      background: #00b894;
+    }
+
+    .task-categories {
+      margin-top: 40px;
+    }
+
+    .category-title {
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      text-align: center;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .category-card {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      padding: 25px 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .category-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(71, 118, 230, 0.15);
+    }
+
+    .category-icon {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .category-name {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .category-desc {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted var(--text-light);
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-left: 5px;
+      cursor: help;
+    }
+
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.75rem;
+      font-weight: normal;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .reward-field {
+      display: flex;
+      align-items: center;
+    }
+
+    .reward-field input {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .reward-field select {
+      width: auto;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-left: none;
+    }
+
+    .price-range {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .price-range span {
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .help-text {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 5px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .checkbox-group input {
+      margin-top: 5px;
+    }
+
+    .checkbox-group label {
+      font-size: 0.9rem;
+    }
+
+    .checkbox-group a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .checkbox-group a:hover {
+      text-decoration: underline;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .alert-info {
+      background: rgba(71, 118, 230, 0.1);
+      border-left: 4px solid var(--primary);
+    }
+
+    .alert-icon {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .alert-content h4 {
+      margin-bottom: 5px;
+      font-size: 1rem;
+    }
+
+    .alert-content p {
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    /* Fuel Cart Styles - Optimized */
+    .fuel-cart-container {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .fuel-selector-compact {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .fuel-item-compact {
+      background: var(--off-white);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .fuel-item-compact:hover {
+      background: #f0f4ff;
+      border-color: var(--primary);
+    }
+
+    .fuel-item-compact.selected {
+      background: rgba(71, 118, 230, 0.1);
+      border-color: var(--primary);
+    }
+
+    .fuel-info-compact {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .fuel-icon {
+      font-size: 1.2rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    /* Fuel Type Selection Styles */
+    .fuel-type-selector {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .fuel-type-btn {
+      padding: 4px 8px;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      background: white;
+      color: var(--primary);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .fuel-type-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .fuel-type-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .fuel-type-btn.petrol.active {
+      background: #FF6B35;
+      border-color: #FF6B35;
+    }
+
+    .fuel-type-btn.diesel.active {
+      background: #2E8B57;
+      border-color: #2E8B57;
+    }
+
+    .fuel-type-btn.mobil.active {
+      background: #4169E1;
+      border-color: #4169E1;
+    }
+
+    .fuel-details-compact {
+      flex: 1;
+      min-height: 40px;
+    }
+
+    /* Mobil Oil Selector Styles */
+    .mobil-oil-selector {
+      display: none;
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(65, 105, 225, 0.1);
+      border-radius: 6px;
+      border-left: 3px solid #4169E1;
+    }
+
+    .mobil-oil-selector.active {
+      display: block;
+    }
+
+    .mobil-oil-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 5px;
+    }
+
+    .mobil-oil-btn {
+      padding: 3px 6px;
+      border: 1px solid #4169E1;
+      border-radius: 3px;
+      background: white;
+      color: #4169E1;
+      font-size: 0.65rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .mobil-oil-btn.selected {
+      background: #4169E1;
+      color: white;
+    }
+
+    .mobil-oil-btn:hover {
+      background: #4169E1;
+      color: white;
+    }
+
+    .mobil-oil-label {
+      font-size: 0.7rem;
+      color: #4169E1;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .quantity-controls-compact {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quantity-btn-compact {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+    }
+
+    .quantity-btn-compact:hover {
+      background: var(--secondary);
+      transform: scale(1.05);
+    }
+
+    .quantity-btn-compact:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .quantity-display-compact {
+      background: var(--white);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      min-width: 20px;
+      text-align: center;
+      font-size: 0.8rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .cart-summary-compact {
+      background: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
+      color: white;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .cart-summary-compact h3 {
+      margin: 0 0 10px 0;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cart-items-compact {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .cart-item-compact {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-total {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .location-container {
+      background: var(--off-white);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .location-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .location-success {
+      background: rgba(0, 196, 154, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(0, 196, 154, 0.3);
+    }
+
+    .location-error {
+      background: rgba(255, 87, 87, 0.1);
+      color: var(--error);
+      border: 1px solid rgba(255, 87, 87, 0.3);
+    }
+
+    .location-loading {
+      background: rgba(71, 118, 230, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(71, 118, 230, 0.3);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .fuel-selector-compact {
+        grid-template-columns: 1fr;
+      }
+
+      .form-footer {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .form-footer button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+        font-size: 1.5rem;
+        color: var(--text-dark);
+        cursor: pointer;
+      }
+
+      .page-title h1 {
+        font-size: 1.8rem;
+      }
+
+      .cart-items-compact {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-menu-btn {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="page-title">
+      <h1>List Your Need</h1>
+      <p>Tell us what you need help with and let our community come to your rescue. Be specific to get matched with the
+        right helper.</p>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="alert-icon">
+        <i class="fas fa-info-circle"></i>
+      </div>
+      <div class="alert-content">
+        <h4>For Better Results</h4>
+        <p>Be as specific as possible about what you need, when you need it, and how much you're willing to reward your
+          helper. Clear details mean faster help!</p>
+      </div>
+    </div>
+
+    <!-- Fuel Cart Section - Conditional -->
+    <div class="fuel-cart-container" id="fuel-cart-section" style="display: none;">
+      <h2 class="form-title"><i class="fas fa-gas-pump"></i> Select Fuel & Quantity</h2>
+      <p style="color: var(--text-light); margin-bottom: 20px; font-size: 0.9rem;">
+        💡 <strong>Note:</strong> Select the fuel containers you need. Our helper will bring the fuel to your location.
+      </p>
+
+      <div class="fuel-selector-compact">
+        <div class="fuel-item-compact" id="fuel-1-ltr">
+          <div class="fuel-info-compact">
+            <span class="fuel-icon">🛵</span>
+            <div class="fuel-details-compact">
+              <h4>1L Container</h4>
+              <p class="fuel-price" id="price-1-ltr">₹120/L</p>
+              <div class="fuel-type-selector">
+                <button class="fuel-type-btn petrol active" onclick="selectFuelType('1-ltr', 'petrol', 120)"
+                  data-container="1-ltr">Petrol</button>
+                <button class="fuel-type-btn diesel" onclick="selectFuelType('1-ltr', 'diesel', 95)"
+                  data-container="1-ltr">Diesel</button>
+                <button class="fuel-type-btn mobil" onclick="selectFuelType('1-ltr', 'mobil', 850)"
+                  data-container="1-ltr">Mobil Oil</button>
+              </div>
+              <div class="mobil-oil-selector" id="mobil-selector-1-ltr">
+                <div class="mobil-oil-label">🛢️ Select Mobil Oil Type:</div>
+                <div class="mobil-oil-options">
+                  <button class="mobil-oil-btn selected" onclick="selectMobilType('1-ltr', 'Mobil 1', 850)">Mobil
+                    1</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('1-ltr', 'Castrol GTX', 750)">Castrol
+                    GTX</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('1-ltr', 'Shell Helix', 800)">Shell
+                    Helix</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('1-ltr', 'Valvoline', 720)">Valvoline</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('1-ltr', 'Total Quartz', 680)">Total
+                    Quartz</button>
+                </div>
+              </div>
+              <div class="fuel-selection-info" id="fuel-info-1-ltr">Petrol selected</div>
+            </div>
+          </div>
+          <div class="quantity-controls-compact">
+            <button class="quantity-btn-compact" onclick="updateQuantity('1-ltr', -1)">−</button>
+            <div class="quantity-display-compact" id="qty-1-ltr">0</div>
+            <button class="quantity-btn-compact" onclick="updateQuantity('1-ltr', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="fuel-item-compact" id="fuel-2-ltrs">
+          <div class="fuel-info-compact">
+            <span class="fuel-icon">🚗</span>
+            <div class="fuel-details-compact">
+              <h4>2L Container</h4>
+              <p class="fuel-price" id="price-2-ltrs">₹240/2L</p>
+              <div class="fuel-type-selector">
+                <button class="fuel-type-btn petrol active" onclick="selectFuelType('2-ltrs', 'petrol', 240)"
+                  data-container="2-ltrs">Petrol</button>
+                <button class="fuel-type-btn diesel" onclick="selectFuelType('2-ltrs', 'diesel', 190)"
+                  data-container="2-ltrs">Diesel</button>
+                <button class="fuel-type-btn mobil" onclick="selectFuelType('2-ltrs', 'mobil', 1700)"
+                  data-container="2-ltrs">Mobil Oil</button>
+              </div>
+              <div class="mobil-oil-selector" id="mobil-selector-2-ltrs">
+                <div class="mobil-oil-label">🛢️ Select Mobil Oil Type:</div>
+                <div class="mobil-oil-options">
+                  <button class="mobil-oil-btn selected" onclick="selectMobilType('2-ltrs', 'Mobil 1', 1700)">Mobil
+                    1</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('2-ltrs', 'Castrol GTX', 1500)">Castrol
+                    GTX</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('2-ltrs', 'Shell Helix', 1600)">Shell
+                    Helix</button>
+                  <button class="mobil-oil-btn"
+                    onclick="selectMobilType('2-ltrs', 'Valvoline', 1440)">Valvoline</button>
+                  <button class="mobil-oil-btn" onclick="selectMobilType('2-ltrs', 'Total Quartz', 1360)">Total
+                    Quartz</button>
+                </div>
+              </div>
+              <div class="fuel-selection-info" id="fuel-info-2-ltrs">Petrol selected</div>
+            </div>
+          </div>
+          <div class="quantity-controls-compact">
+            <button class="quantity-btn-compact" onclick="updateQuantity('2-ltrs', -1)">−</button>
+            <div class="quantity-display-compact" id="qty-2-ltrs">0</div>
+            <button class="quantity-btn-compact" onclick="updateQuantity('2-ltrs', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="fuel-item-compact" id="fuel-3-ltrs">
+          <div class="fuel-info-compact">
+            <span class="fuel-icon">🚙</span>
+            <div class="fuel-details-compact">
+              <h4>3L Container</h4>
+              <p class="fuel-price" id="price-3-ltrs">₹360/3L</p>
+              <div class="fuel-type-selector">
+                <button class="fuel-type-btn petrol active" onclick="selectFuelType('3-ltrs', 'petrol', 360)"
+                  data-container="3-ltrs">Petrol</button>
+                <button class="fuel-type-btn diesel" onclick="selectFuelType('3-ltrs', 'diesel', 285)"
+                  data-container="3-ltrs">Diesel</button>
+              </div>
+              <div class="fuel-selection-info" id="fuel-info-3-ltrs">Petrol selected</div>
+            </div>
+          </div>
+          <div class="quantity-controls-compact">
+            <button class="quantity-btn-compact" onclick="updateQuantity('3-ltrs', -1)">−</button>
+            <div class="quantity-display-compact" id="qty-3-ltrs">0</div>
+            <button class="quantity-btn-compact" onclick="updateQuantity('3-ltrs', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="fuel-item-compact" id="fuel-jerry-10l">
+          <div class="fuel-info-compact">
+            <span class="fuel-icon">⛽</span>
+            <div class="fuel-details-compact">
+              <h4>Jerry Can 10L</h4>
+              <p class="fuel-price" id="price-jerry-10l">₹1200/10L</p>
+              <div class="fuel-type-selector">
+                <button class="fuel-type-btn petrol active" onclick="selectFuelType('jerry-10l', 'petrol', 1200)"
+                  data-container="jerry-10l">Petrol</button>
+                <button class="fuel-type-btn diesel" onclick="selectFuelType('jerry-10l', 'diesel', 950)"
+                  data-container="jerry-10l">Diesel</button>
+              </div>
+              <div class="fuel-selection-info" id="fuel-info-jerry-10l">Petrol selected</div>
+            </div>
+          </div>
+          <div class="quantity-controls-compact">
+            <button class="quantity-btn-compact" onclick="updateQuantity('jerry-10l', -1)">−</button>
+            <div class="quantity-display-compact" id="qty-jerry-10l">0</div>
+            <button class="quantity-btn-compact" onclick="updateQuantity('jerry-10l', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-summary-compact" id="cart-summary-compact" style="display: none;">
+        <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
+        <div class="cart-items-compact" id="cart-items-compact"></div>
+        <div class="cart-total" id="cart-total"></div>
+      </div>
+    </div>
+
+    <div class="task-form-container">
+      <h2 class="form-title"><i class="fas fa-clipboard-list"></i> Task Details</h2>
+
+      <form id="task-form" onsubmit="handleamr(event)" method="post" action="/addtask" enctype="multipart/form-data">
+        <div class="form-grid">
+
+          <div class="input-group">
+            <label class="input-label required" id="amr1" for="task-category">Task Category</label>
+            <select id="task-category" name="task-category" class="select-field" required
+              onchange="toggleFuelSection()">
+              <option value="">🔽 Select a category</option>
+              <option value="fuels">⛽ Fuels (Petrol, Diesel, CNG)</option>
+              <option value="components">🔧 Vehicle's Components</option>
+              <option value="mechanic">👨‍🔧 Vehicles Repair Mechanic</option>
+              <option value="ev-service">🔋 Electric Vehicle Service</option>
+              <option value="full-service">🛠️ Full Service (Complete Check-up)</option>
+              <option value="mechanic-fuels">⛽👨‍🔧 Mechanic + Fuels</option>
+              <option value="mechanic-components">🔧👨‍🔧 Mechanic + Components</option>
+              <option value="towing">🚛 Towing & Recovery</option>
+              <option value="roadside">🛣️ Roadside Assistance</option>
+              <option value="other">❓ Other Services</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label required" for="Components">🔧 Vehicle Components</label>
+            <select id="Components" name="Components" class="select-field">
+              <option value="">🛠️ Which component do you need?</option>
+              <optgroup label="🛢️ Oils & Fluids">
+                <option value="Engine-Oil">🛢️ Engine Oil (Motor Oil)</option>
+                <option value="Mobil-Oil">⚙️ Mobil Oil (Premium Engine Oil)</option>
+                <option value="Brake-Oil">🛑 Brake Oil (Brake Fluid)</option>
+                <option value="Coolant">❄️ Coolant (Radiator Fluid)</option>
+              </optgroup>
+              <optgroup label="🛞 Wheels & Tires">
+                <option value="Tyre">🛞 Tyre (Wheel Tire)</option>
+                <option value="Tube">⭕ Tube (Inner Tube)</option>
+                <option value="Rim">🔵 Wheel Rim (Alloy/Steel)</option>
+              </optgroup>
+              <optgroup label="🔋 Electrical">
+                <option value="Battery">🔋 Battery (Car/Bike Battery)</option>
+                <option value="Spark-Plug">⚡ Spark Plug (Ignition)</option>
+                <option value="Alternator">🔌 Alternator</option>
+                <option value="Headlight">💡 Headlight Bulb</option>
+              </optgroup>
+              <optgroup label="🔧 Engine Parts">
+                <option value="Air-Filter">🌪️ Air Filter (Engine Filter)</option>
+                <option value="Oil-Filter">🛢️ Oil Filter</option>
+                <option value="Fuel-Filter">⛽ Fuel Filter</option>
+                <option value="Belt">🔗 Drive Belt</option>
+              </optgroup>
+              <optgroup label="🛑 Brake System">
+                <option value="Brake-Pads">🔴 Brake Pads</option>
+                <option value="Brake-Disc">⚫ Brake Disc</option>
+                <option value="Brake-Cable">🔗 Brake Cable</option>
+              </optgroup>
+
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label required" for="task-urgency">⏰ Urgency Level</label>
+            <select id="task-urgency" name="task-urgency" class="select-field" required>
+              <option value="">🕐 How soon do you need it?</option>
+              <option value="emergency">🚨Emergency (Within 1 hours)</option>
+              <option value="immediate">🚨 Immediate (1-2 hours)</option>
+              <option value="today">📅 Today (Within 24 hours)</option>
+              <option value="tomorrow">🌅 Tomorrow</option>
+              <option value="week">📆 This week (2-7 days)</option>
+              <option value="flexible">⏳ Flexible (No rush)</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="mechanic-problem">👨‍🔧 Mechanic - What's the problem?</label>
+            <select id="mechanic-problem" name="mechanic-problem" class="select-field">
+              <option value="">🔧 Select your vehicle problem</option>
+              <optgroup label="🛞 Tire & Wheel Issues">
+                <option value="Tyre-Puncture">🛞 Tyre Puncture/Flat Tire</option>
+                <option value="Tyre-Burst">💥 Tyre Burst/Blowout</option>
+                <option value="Wheel-Alignment">⚖️ Wheel Alignment Issue</option>
+                <option value="Rim-Damage">🔵 Rim Damage/Bent</option>
+              </optgroup>
+              <optgroup label="⚙️ Engine Problems">
+                <option value="Engine-Not-Start">🚫 Engine Won't Start</option>
+                <option value="Engine-Overheating">🔥 Engine Overheating</option>
+                <option value="Engine-Oil-Leak">🛢️ Engine Oil Leak</option>
+                <option value="Engine-Noise">🔊 Strange Engine Noise</option>
+                <option value="Engine-Stalling">⏸️ Engine Stalling/Dies</option>
+              </optgroup>
+              <optgroup label="🔋 Electrical Issues">
+                <option value="Battery-Dead">🔋 Dead Battery</option>
+                <option value="Battery-Not-Charging">⚡ Battery Not Charging</option>
+                <option value="Lights-Not-Working">💡 Lights Not Working</option>
+                <option value="Horn-Issue">📯 Horn Not Working</option>
+                <option value="Starter-Problem">🔑 Starter Motor Issue</option>
+                <option value="Alternator-Problem">🔌 Alternator Problem</option>
+              </optgroup>
+              <optgroup label="🛑 Brake System">
+                <option value="Brake-Not-Working">🛑 Brakes Not Working</option>
+                <option value="Brake-Noise">🔊 Brake Noise/Squeaking</option>
+                <option value="Brake-Fluid-Leak">💧 Brake Fluid Leak</option>
+              </optgroup>
+              <optgroup label="⛽ Fuel System">
+                <option value="Fuel-Leak">⛽ Fuel Leak</option>
+                <option value="Fuel-Pump-Issue">🔄 Fuel Pump Problem</option>
+                <option value="Carburetor-Issue">🔧 Carburetor Problem</option>
+                <option value="Fuel-Injector">💉 Fuel Injector Issue</option>
+              </optgroup>
+              <optgroup label="🔧 Transmission & Clutch">
+                <option value="Clutch-Problem">🔄 Clutch Not Working</option>
+                <option value="Gear-Shifting">⚙️ Gear Shifting Problem</option>
+                <option value="Transmission-Leak">🛢️ Transmission Oil Leak</option>
+                <option value="Chain-Issue">🔗 Chain/Belt Problem</option>
+              </optgroup>
+              <optgroup label="🔋 Electric Vehicle (EV) Problems">
+                <option value="EV-Not-Charging">🔌 EV Not Charging</option>
+                <option value="EV-Battery-Low">🔋 Battery Range Issue</option>
+                <option value="EV-Motor-Problem">⚡ Electric Motor Issue</option>
+                <option value="EV-Controller-Error">🖥️ Controller Error</option>
+                <option value="EV-Charging-Port">🔌 Charging Port Damage</option>
+                <option value="EV-Display-Error">📱 Display/Dashboard Error</option>
+                <option value="EV-Regenerative-Brake">🔄 Regenerative Brake Issue</option>
+                <option value="EV-Cooling-System">❄️ EV Cooling System Problem</option>
+              </optgroup>
+              <optgroup label="🌡️ Cooling & Heating in Cars and Heavy Vehicles">
+                <option value="Radiator-Leak">💧 Radiator Leak</option>
+                <option value="AC-Not-Working">❄️ AC Not Working</option>
+                <option value="Heater-Problem">🔥 Heater Not Working</option>
+                <option value="Fan-Issue">🌪️ Cooling Fan Problem</option>
+              </optgroup>
+              <optgroup label="❓ Other Issues">
+                <option value="Strange-Vibration">📳 Strange Vibration</option>
+                <option value="Steering-Problem">🚗 Steering Issue</option>
+                <option value="Suspension-Issue">🛣️ Suspension Problem</option>
+                <option value="Other-Problem">❓ Other Mechanical Problem</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="input-group full-width">
+            <label class="input-label" for="task-description">📝 Problem Description</label>
+            <textarea id="task-description" name="task-description" class="textarea-field" placeholder="Describe your problem in detail...
+Example for Engine: 'My car engine makes strange noise when starting'
+Example for EV: 'My electric scooter is not charging and shows error code E01'
+Example for Tire: 'Front tire is completely flat, happened near highway'"></textarea>
+          </div>
+
+          <!-- GPS Location Section -->
+          <div class="input-group full-width">
+            <label class="input-label required" for="task-location">Your Location</label>
+            <div class="location-container">
+              <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <button type="button" class="btn btn-primary btn-small" onclick="getCurrentLocation()">
+                  <i class="fas fa-map-marker-alt"></i> Use GPS Location
+                </button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="enableManualLocation()">
+                  <i class="fas fa-edit"></i> Enter Manually
+                </button>
+              </div>
+              <div id="location-status" class="location-status hidden"></div>
+              <input type="hidden" id="latitude" name="latitude">
+              <input type="hidden" id="longitude" name="longitude">
+              <input type="text" id="task-location" name="task-location" class="input-field"
+                placeholder="Click 'Use GPS Location' or 'Enter Manually' to set your location"
+                style="margin-top: 10px;">
+
+              <!-- Quick location suggestions -->
+              <div id="location-suggestions" class="hidden" style="margin-top: 10px;">
+                <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 10px;">📍 Quick Suggestions:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <button type="button" class="btn btn-secondary btn-small"
+                    onclick="setQuickLocation('Gorakhpur Railway Station')">🚉 Railway Station</button>
+                  <button type="button" class="btn btn-secondary btn-small"
+                    onclick="setQuickLocation('Gorakhpur Bus Stand')">🚌 Bus Stand</button>
+                  <button type="button" class="btn btn-secondary btn-small"
+                    onclick="setQuickLocation('Civil Lines, Gorakhpur')">🏙️ Civil Lines</button>
+                  <button type="button" class="btn btn-secondary btn-small"
+                    onclick="setQuickLocation('Golghar, Gorakhpur')">🏪 Golghar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label required" for="task-date">Preferred Date</label>
+            <input type="date" id="task-date" name="task-date" class="input-field" required>
+          </div>
+          <div class="input-group">
+            <label class="input-label required" for="task-time">Preferred Time</label>
+            <input type="time" id="task-time" name="task-time" class="input-field" required>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label required" for="task-contact">📱 Mobile No.</label>
+            <input type="number" id="task-contact" name="task-contact" class="input-field" required>
+          </div>
+
+          <div class="input-group full-width">
+            <label class="input-label" for="task-photo">Add Photos (Optional)</label>
+            <input type="file" id="task-photo" name="task-photo" accept="image/*" multiple>
+          </div>
+
+          <div class="input-group full-width">
+            <label class="input-label" for="special-instructions">Special Instructions (Optional)</label>
+            <textarea id="special-instructions" name="special-instructions" class="textarea-field"
+              placeholder="Any extra info?"></textarea>
+          </div>
+
+          <div class="input-group full-width">
+            <div class="checkbox-group">
+              <input type="checkbox" id="terms-conditions" name="terms-conditions" required>
+              <label for="terms-conditions">I agree to the <a href="#">Terms</a>, <a href="#">Privacy Policy</a>, and <a
+                  href="#">Guidelines</a>.</label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="form-footer">
+          <button type="button" class="btn btn-secondary" onclick="redirectToLearn(event)"><i class="fas fa-save"></i>
+            Save as Draft</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Post Task Now</button>
+        </div>
+      </form>
+
+    </div>
+
+    <div class="task-categories">
+      <h3 class="category-title">🛠️ Common Service Categories</h3>
+      <div class="category-grid">
+        <div class="category-card" onclick="selectCategory('fuels')">
+          <div class="category-icon">
+            <i class="fas fa-gas-pump"></i>
+          </div>
+          <div class="category-name">⛽ Fuels</div>
+          <div class="category-desc">Petrol, Diesel, CNG, Mobile Oil</div>
+        </div>
+
+        <div class="category-card" onclick="task-category('components')">
+          <div class="category-icon">
+            <i class="fas fa-cog"></i>
+          </div>
+          <div class="category-name">🔧 Vehicle Components</div>
+          <div class="category-desc">Tyres, Batteries, Oils, Filters</div>
+        </div>
+
+        <div class="category-card" onclick="selectCategory('Full Service')">
+          <div class="category-icon">
+            <i class="fas fa-tools"></i>
+          </div>
+          <div class="category-name">🛠️ Full Service</div>
+          <div class="category-desc">Complete vehicle check-up & maintenance</div>
+        </div>
+
+        <div class="category-card" onclick="selectCategory('EV Service')">
+          <div class="category-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="category-name">🔋 EV Service</div>
+          <div class="category-desc">Electric vehicle support & repair</div>
+        </div>
+
+        <div class="category-card" onclick="selectCategory('Towing')">
+          <div class="category-icon">
+            <i class="fas fa-truck"></i>
+          </div>
+          <div class="category-name">🚛 Towing</div>
+          <div class="category-desc">Vehicle recovery & towing service</div>
+        </div>
+
+        <div class="category-card" onclick="selectCategory('Roadside')">
+          <div class="category-icon">
+            <i class="fas fa-road"></i>
+          </div>
+          <div class="category-name">🛣️ Roadside Help</div>
+          <div class="category-desc">Emergency roadside assistance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Fuel cart functionality - Updated with fuel types
+    let fuelCart = {};
+    let fuelTypes = {
+      '1-ltr': 'petrol',
+      '2-ltrs': 'petrol',
+      '3-ltrs': 'petrol',
+      '5-ltrs': 'petrol',
+      'jerry-10l': 'petrol',
+      'jerry-20l': 'petrol'
+    };
+
+    const fuelPrices = {
+      'petrol': { '1-ltr': 120, '2-ltrs': 240, '3-ltrs': 360, '5-ltrs': 600, 'jerry-10l': 1200, 'jerry-20l': 2400 },
+      'diesel': { '1-ltr': 95, '2-ltrs': 190, '3-ltrs': 285, '5-ltrs': 475, 'jerry-10l': 950, 'jerry-20l': 1900 },
+      'mobil': { '1-ltr': 850, '2-ltrs': 1700, '3-ltrs': 2550, '5-ltrs': 4250, 'jerry-10l': 8500, 'jerry-20l': 17000 }
+    };
+
+    const fuelDisplayNames = {
+      'petrol': '⛽ Petrol',
+      'diesel': '🚛 Diesel',
+      'mobil': '🛢️ Mobil Oil'
+    };
+
+    function selectFuelType(container, fuelType, price) {
+      // Update fuel type for this container
+      fuelTypes[container] = fuelType;
+
+      // Update active button styling
+      const buttons = document.querySelectorAll(`[data-container="${container}"]`);
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Update price display
+      const priceElement = document.getElementById(`price-${container}`);
+      const containerSize = container.includes('jerry-20l') ? '20L' :
+        container.includes('jerry-10l') ? '10L' :
+          container.includes('5-ltrs') ? '5L' :
+            container.includes('3-ltrs') ? '3L' :
+              container.includes('2-ltrs') ? '2L' : '1L';
+      priceElement.textContent = `₹${price}/${containerSize}`;
+
+      // Update fuel info
+      const infoElement = document.getElementById(`fuel-info-${container}`);
+      infoElement.textContent = `${fuelDisplayNames[fuelType]} selected`;
+
+      // Update cart if this container has quantity
+      if (fuelCart[container] > 0) {
+        updateCartSummary();
+      }
+    }
+
+    function updateQuantity(fuelType, change) {
+      if (!fuelCart[fuelType]) {
+        fuelCart[fuelType] = 0;
+      }
+
+      fuelCart[fuelType] += change;
+
+      if (fuelCart[fuelType] < 0) {
+        fuelCart[fuelType] = 0;
+      }
+
+      // Update display
+      document.getElementById(`qty-${fuelType}`).textContent = fuelCart[fuelType];
+
+      // Update minus button state
+      const minusBtn = document.querySelector(`[onclick="updateQuantity('${fuelType}', -1)"]`);
+      minusBtn.disabled = fuelCart[fuelType] === 0;
+
+      // Add visual feedback for selected items
+      const fuelItem = document.getElementById(`fuel-${fuelType}`);
+      if (fuelCart[fuelType] > 0) {
+        fuelItem.classList.add('selected');
+      } else {
+        fuelItem.classList.remove('selected');
+      }
+
+      updateCartSummary();
+    }
+
+    function updateCartSummary() {
+      const cartSummary = document.getElementById('cart-summary-compact');
+      const cartItems = document.getElementById('cart-items-compact');
+      const cartTotal = document.getElementById('cart-total');
+
+      // Clear previous items
+      cartItems.innerHTML = '';
+
+      let totalItems = 0;
+      let totalPrice = 0;
+      let hasItems = false;
+
+      // Container size names for display
+      const containerNames = {
+        '1-ltr': '1L',
+        '2-ltrs': '2L',
+        '3-ltrs': '3L',
+        '5-ltrs': '5L',
+        'jerry-10l': 'Jerry 10L',
+        'jerry-20l': 'Jerry 20L'
+      };
+
+      // Add items to cart display
+      for (const [container, quantity] of Object.entries(fuelCart)) {
+        if (quantity > 0) {
+          hasItems = true;
+          totalItems += quantity;
+          const selectedFuelType = fuelTypes[container];
+          const itemPrice = fuelPrices[selectedFuelType][container] * quantity;
+          totalPrice += itemPrice;
+
+          const cartItem = document.createElement('div');
+          cartItem.className = 'cart-item-compact';
+          cartItem.innerHTML = `
+            <span>${containerNames[container]} ${fuelDisplayNames[selectedFuelType]} ×${quantity}</span>
+            <span>₹${itemPrice}</span>
+          `;
+          cartItems.appendChild(cartItem);
+        }
+      }
+
+      // Update total
+      if (hasItems) {
+        cartTotal.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span><strong>Total: ${totalItems} containers</strong></span>
+            <span><strong>₹${totalPrice}</strong></span>
+          </div>
+        `;
+      }
+
+      // Show/hide cart summary
+      cartSummary.style.display = hasItems ? 'block' : 'none';
+    }
+
+    // GPS Location functionality
+    function getCurrentLocation() {
+      const statusDiv = document.getElementById('location-status');
+      const locationInput = document.getElementById('task-location');
+
+      // Show loading state
+      statusDiv.className = 'location-status location-loading';
+      statusDiv.textContent = '📍 Getting your location...';
+      statusDiv.classList.remove('hidden');
+
+      if (!navigator.geolocation) {
+        showLocationError('🚫 Geolocation is not supported by this browser. Please use manual entry.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          // Store coordinates
+          document.getElementById('latitude').value = latitude;
+          document.getElementById('longitude').value = longitude;
+
+          // Use reverse geocoding to get address (using a free service)
+          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+            .then(response => response.json())
+            .then(data => {
+              const address = data.display_name || `${data.locality}, ${data.city}, ${data.principalSubdivision}`;
+              locationInput.value = address;
+
+              statusDiv.className = 'location-status location-success';
+              statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Location detected successfully!`;
+            })
+            .catch(error => {
+              // If reverse geocoding fails, still show coordinates
+              locationInput.value = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+              statusDiv.className = 'location-status location-success';
+              statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Coordinates captured successfully!`;
+            });
+        },
+        function (error) {
+          let errorMessage = '';
+          let helpText = '';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = '🔒 Location access denied by user.';
+              helpText = `
+                <br><strong>To enable location:</strong><br>
+                📱 <strong>Mobile:</strong> Tap the 🔒 icon in address bar → Allow Location<br>
+                💻 <strong>Desktop:</strong> Click the 🔒 icon left of URL → Allow Location<br>
+                🔄 Then refresh and try again, or use manual entry below.
+              `;
+              enableManualLocation();
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = '📡 Location information is unavailable.';
+              helpText = '<br>Please check your GPS/internet connection or use manual entry.';
+              enableManualLocation();
+              break;
+            case error.TIMEOUT:
+              errorMessage = '⏰ Location request timed out.';
+              helpText = '<br>Please try again or use manual entry.';
+              enableManualLocation();
+              break;
+            default:
+              errorMessage = '❌ Unknown error occurred while getting location.';
+              helpText = '<br>Please use manual location entry.';
+              enableManualLocation();
+              break;
+          }
+          showLocationError(errorMessage + helpText);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 300000
+        }
+      );
+    }
+
+    function enableManualLocation() {
+      const locationInput = document.getElementById('task-location');
+      const statusDiv = document.getElementById('location-status');
+      const suggestionsDiv = document.getElementById('location-suggestions');
+
+      // Make input field editable
+      locationInput.readOnly = false;
+      locationInput.placeholder = 'Enter your area, landmark, or address (e.g., Golghar, Gorakhpur)';
+      locationInput.focus();
+
+      // Show quick suggestions
+      suggestionsDiv.classList.remove('hidden');
+
+      // Update status
+      statusDiv.className = 'location-status location-success';
+      statusDiv.innerHTML = `<i class="fas fa-edit"></i> ✍️ Manual location entry enabled. Type your location below.`;
+      statusDiv.classList.remove('hidden');
+    }
+
+    function setQuickLocation(location) {
+      const locationInput = document.getElementById('task-location');
+      const statusDiv = document.getElementById('location-status');
+
+      locationInput.value = location;
+
+      statusDiv.className = 'location-status location-success';
+      statusDiv.innerHTML = `<i class="fas fa-map-marker"></i> 📍 Location set to: ${location}`;
+    }
+
+    function showLocationError(message) {
+      const statusDiv = document.getElementById('location-status');
+      statusDiv.className = 'location-status location-error';
+      statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+    }
+
+    // Function to toggle fuel section visibility
+    function toggleFuelSection() {
+      const category = document.getElementById('task-category').value;
+      const fuelSection = document.getElementById('fuel-cart-section');
+
+      // Categories that require fuel selection
+      const fuelCategories = ['fuels', 'mechanic-fuels', 'full-service'];
+
+      if (fuelCategories.includes(category)) {
+        fuelSection.style.display = 'block';
+        // Smooth scroll to fuel section
+        setTimeout(() => {
+          fuelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+      } else {
+        fuelSection.style.display = 'none';
+        // Clear any selected fuel when hiding section
+        fuelCart = {};
+        fuelTypes = {
+          '1-ltr': 'petrol',
+          '2-ltrs': 'petrol',
+          '3-ltrs': 'petrol',
+          'jerry-10l': 'petrol'
+        };
+        mobilBrands = {
+          '1-ltr': 'Mobil 1',
+          '2-ltrs': 'Mobil 1',
+          '3-ltrs': 'Mobil 1',
+          'jerry-10l': 'Mobil 1'
+        };
+        updateCartSummary();
+
+        // Reset quantity displays
+        document.querySelectorAll('.quantity-display-compact').forEach(display => {
+          display.textContent = '0';
+        });
+
+        // Reset all buttons and selected states
+        document.querySelectorAll('.quantity-btn-compact').forEach(btn => {
+          btn.disabled = false;
+        });
+
+        document.querySelectorAll('.fuel-item-compact').forEach(item => {
+          item.classList.remove('selected');
+        });
+
+        // Reset fuel type selections to petrol
+        document.querySelectorAll('.fuel-type-btn').forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.classList.contains('petrol')) {
+            btn.classList.add('active');
+          }
+        });
+
+        // Hide all mobil oil selectors
+        document.querySelectorAll('.mobil-oil-selector').forEach(selector => {
+          selector.classList.remove('active');
+        });
+
+        // Reset mobil oil selections
+        document.querySelectorAll('.mobil-oil-btn').forEach(btn => {
+          btn.classList.remove('selected');
+          if (btn.textContent === 'Mobil 1') {
+            btn.classList.add('selected');
+          }
+        });
+
+        // Reset all fuel info texts
+        document.querySelectorAll('[id^="fuel-info-"]').forEach(info => {
+          info.textContent = 'Petrol selected';
+        });
+
+        // Reset all prices to petrol prices
+        document.getElementById('price-1-ltr').textContent = '₹120/1L';
+        document.getElementById('price-2-ltrs').textContent = '₹240/2L';
+        document.getElementById('price-3-ltrs').textContent = '₹360/3L';
+        document.getElementById('price-jerry-10l').textContent = '₹1200/10L';
+      }
+    }
+
+    // Initialize today's date as default
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    document.getElementById('task-date').value = formattedDate;
+
+    // Form submission handling
+    document.getElementById('task-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Add fuel cart data to form
+      const cartData = JSON.stringify(fuelCart);
+      const cartInput = document.createElement('input');
+      cartInput.type = 'hidden';
+      cartInput.name = 'fuel-cart';
+      cartInput.value = cartData;
+      this.appendChild(cartInput);
+
+      // Basic validation
+      const category = document.getElementById('task-category').value;
+      const urgency = document.getElementById('task-urgency').value;
+      const location = document.getElementById('task-location').value;
+
+      if (!category || !urgency || !location) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      // Check if fuel is selected when category is fuel-related
+      const fuelRequiredCategories = ['fuels', 'mechanic-fuels', 'full-service'];
+      if (fuelRequiredCategories.includes(category) && Object.values(fuelCart).every(qty => qty === 0)) {
+        alert('Please select fuel quantities for fuel-related services');
+        return;
+      }
+
+      // Show success message (in a real app, this would submit the form)
+      alert('Your task has been successfully posted! Nearby helpers will be notified.');
+
+      // Reset form and cart
+      this.reset();
+      fuelCart = {};
+      updateCartSummary();
+
+      // Reset quantity displays
+      document.querySelectorAll('.quantity-display-compact').forEach(display => {
+        display.textContent = '0';
+      });
+
+      // Reset all minus buttons and selected states
+      document.querySelectorAll('.quantity-btn-compact').forEach(btn => {
+        btn.disabled = false;
+      });
+
+      document.querySelectorAll('.fuel-item-compact').forEach(item => {
+        item.classList.remove('selected');
+      });
+    });
+
+
+
+
+
+    window.onload = function () {
+      const editIndex = localStorage.getItem("editIndex");
+      if (editIndex !== null) {
+        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+        const task = tasks[editIndex];
+        if (task) {
+          document.querySelector('#task-category').value = task.category;
+          document.querySelector('#Components').value = task.component;
+          document.querySelector('#task-urgency').value = task.urgency;
+          document.querySelector('#mechanic-problem').value = task.mechanicProblem;
+          document.querySelector('#task-description').value = task.description;
+          document.querySelector('#task-location').value = task.location;
+          document.querySelector('#latitude').value = task.latitude;
+          document.querySelector('#longitude').value = task.longitude;
+          document.querySelector('#task-date').value = task.date;
+          document.querySelector('#task-time').value = task.time;
+          document.getElementById("task-contact").value = task.contact;
+          document.querySelector('#special-instructions').value = task.specialInstructions;
+        }
+      }
+    };
+
+    function handleamr(event) {
+      event.preventDefault();
+
+      // collect values same as before ...
+      const category = document.querySelector('#task-category').value;
+      const component = document.querySelector('#Components').value;
+      const urgency = document.querySelector('#task-urgency').value;
+      const mechanicProblem = document.querySelector('#mechanic-problem').value;
+      const description = document.querySelector('#task-description').value;
+      const location = document.querySelector('#task-location').value;
+      const latitude = document.querySelector('#latitude').value;
+      const longitude = document.querySelector('#longitude').value;
+      const date = document.querySelector('#task-date').value;
+      const time = document.querySelector('#task-time').value;
+      const contact = document.getElementById("task-contact").value;
+      const specialInstructions = document.querySelector('#special-instructions').value;
+
+      const photos = document.querySelector('#task-photo').files;
+      let photoNames = [];
+      for (let i = 0; i < photos.length; i++) {
+        photoNames.push(photos[i].name);
+      }
+
+      const taskData = {
+        category, component, urgency, mechanicProblem,
+        description, location, latitude, longitude,
+        date,contact, time, specialInstructions, photos: photoNames
+      };
+
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const editIndex = localStorage.getItem("editIndex");
+
+      if (editIndex !== null) {
+        tasks[editIndex] = taskData; // update existing
+        localStorage.removeItem("editIndex"); // clear edit mode
+      } else {
+        tasks.push(taskData); // new task
+      }
+
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      alert("✅ Task saved successfully!");
+      window.location.href = "task_detail.html";
+    }
+
+
+
+
+
+  </script>
+</body>
+
+</html>
