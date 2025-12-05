@@ -479,104 +479,135 @@
         </div>
     </div>
 
-    <script>
-        // Tab switching functionality
-        const loginTab = document.getElementById('login-tab');
-        const registerTab = document.getElementById('register-tab');
-        const loginContent = document.getElementById('login-content');
-        const registerContent = document.getElementById('register-content');
-        const showRegister = document.getElementById('show-register');
-        const showLogin = document.getElementById('show-login');
+ <script>
+    // Tab switching functionality
+    const loginTab = document.getElementById('login-tab');
+    const registerTab = document.getElementById('register-tab');
+    const loginContent = document.getElementById('login-content');
+    const registerContent = document.getElementById('register-content');
+    const showRegister = document.getElementById('show-register');
+    const showLogin = document.getElementById('show-login');
 
-        function switchToLogin() {
-            loginTab.classList.add('active');
-            registerTab.classList.remove('active');
-            loginContent.classList.add('active');
-            registerContent.classList.remove('active');
+    function switchToLogin() {
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+        loginContent.classList.add('active');
+        registerContent.classList.remove('active');
+    }
+
+    function switchToRegister() {
+        registerTab.classList.add('active');
+        loginTab.classList.remove('active');
+        registerContent.classList.add('active');
+        loginContent.classList.remove('active');
+    }
+
+    loginTab.addEventListener('click', switchToLogin);
+    registerTab.addEventListener('click', switchToRegister);
+    showRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchToRegister();
+    });
+    showLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchToLogin();
+    });
+
+    const BASE_URL = "https://swadrive-backend.onrender.com/api";
+
+    // ⭐ BACKEND LOGIN FUNCTION
+    async function handleLogin(event) {
+        event.preventDefault();
+
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+
+        try {
+            const res = await fetch(`${BASE_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.message || "Invalid login!");
+                return;
+            }
+
+            // Save token + user info
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user_id", data.user.id);
+            localStorage.setItem("user_role", data.user.role);
+
+            alert("Login successful!");
+
+            // Redirect based on user role
+            if (data.user.role === "customer") {
+                window.location.href = "Home.html";
+            } else if (data.user.role === "helper") {
+                window.location.href = "tasks.html";
+            }
+
+        } catch (error) {
+            alert("Network error!");
+        }
+    }
+
+    // ⭐ BACKEND REGISTER FUNCTION
+    async function handleregister(event) {
+        event.preventDefault();
+
+        const name = document.getElementById("register-name").value;
+        const email = document.getElementById("register-email").value;
+        const password = document.getElementById("register-password").value;
+        const confirm = document.getElementById("register-confirm-password").value;
+
+        if (password !== confirm) {
+            alert("Passwords do not match!");
+            return;
         }
 
-        function switchToRegister() {
-            registerTab.classList.add('active');
-            loginTab.classList.remove('active');
-            registerContent.classList.add('active');
-            loginContent.classList.remove('active');
+        const role = prompt("Enter your role (customer or helper):");
+
+        if (role !== "customer" && role !== "helper") {
+            alert("Invalid role! Please type customer or helper.");
+            return;
         }
 
-        loginTab.addEventListener('click', switchToLogin);
-        registerTab.addEventListener('click', switchToRegister);
-        showRegister.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchToRegister();
-        });
-        showLogin.addEventListener('click', (e) => {
-            e.preventDefault();
+        try {
+            const res = await fetch(`${BASE_URL}/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    full_name: name,
+                    email,
+                    password,
+                    phone: "0000000000",
+                    role
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.message || "Registration failed!");
+                return;
+            }
+
+            alert("Registration successful! Please login now.");
             switchToLogin();
-        });
 
- 
+        } catch (err) {
+            alert("Network error!");
+        }
+    }
+</script>
 
-  // Login handler
-  function handleLogin(event) {
-      event.preventDefault();
-
-      // Get values from login form
-      const email = document.querySelector('#login-email').value;
-      const password = document.querySelector('#login-password').value;
-
-      // Get saved user data
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-
-      if (!savedUser) {
-          alert("❌ No account found. Please sign up first!");
-          return;
-      }
-
-      // Check credentials
-      if (email === savedUser.email && password === savedUser.password) {
-          alert("✅ Login successful!");
-          localStorage.setItem("currentUser", email); // store active session
-          window.location.href = "Home.html"; // redirect to home page
-      } else {
-          alert("❌ Invalid email or password!");
-      }
-  }
-
-  // Register handler
-  function handleregister(event) {
-      event.preventDefault();
-
-      // Get values from signup form
-      const fullName = document.querySelector('#register-name').value;
-      const email = document.querySelector('#register-email').value;
-      const password = document.querySelector('#register-password').value;
-      const confirmPassword = document.querySelector('#register-confirm-password').value;
-
-      if (password !== confirmPassword) {
-          alert("❌ Passwords do not match!");
-          return;
-      }
-
-      // Save data to localStorage
-      const userData = {
-          fullName,
-          email,
-          password
-      };
-
-      localStorage.setItem("user", JSON.stringify(userData));
-      localStorage.setItem("currentUser", email); // start session
-
-      alert("✅ Account created successfully!");
-      window.location.href = "Home.html"; // redirect to home page
-  }
-
-
-
-
-
-    </script>
 </body>
 
 
 
 </html>
+
