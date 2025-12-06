@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Petro-Service - List Your Need</title>
+  <title>SwaDrive - List Your Need</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1223,86 +1223,161 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
     </div>
   </div>
 
-<!-- ✅ SAME HTML & CSS ABOVE AS YOU SENT (UNCHANGED) -->
-
-<!-- ✅ बस नीचे वाला <script> पूरा REPLACE करो -->
 <script>
-const BASE_URL = "https://swadrive-backend.onrender.com/api";
+/* ================= CONFIG ================= */
+const API_BASE = "https://swadrive-backend.onrender.com/api";
 
-/* ========== TASK CREATE (BACKEND) ========== */
-async function handleTaskCreate(e) {
+/* ================= AUTH ================= */
+function getToken() {
+  return localStorage.getItem("token");
+}
+function getRole() {
+  return localStorage.getItem("user_role");
+}
+
+/* ================= FUEL CART ================= */
+let fuelCart = {};
+let fuelTypes = {
+  "1-ltr": "petrol",
+  "2-ltrs": "petrol",
+  "3-ltrs": "petrol",
+  "jerry-10l": "petrol"
+};
+
+const fuelPrices = {
+  petrol: { "1-ltr": 120, "2-ltrs": 240, "3-ltrs": 360, "jerry-10l": 1200 },
+  diesel: { "1-ltr": 95, "2-ltrs": 190, "3-ltrs": 285, "jerry-10l": 950 },
+  mobil: { "1-ltr": 850, "2-ltrs": 1700 }
+};
+
+function updateQuantity(type, change) {
+  fuelCart[type] = Math.max(0, (fuelCart[type] || 0) + change);
+  document.getElementById(`qty-${type}`).innerText = fuelCart[type];
+  updateCartSummary();
+}
+
+function updateCartSummary() {
+  const wrap = document.getElementById("cart-summary-compact");
+  const items = document.getElementById("cart-items-compact");
+  const totalBox = document.getElementById("cart-total");
+  items.innerHTML = "";
+
+  let total = 0;
+  let count = 0;
+
+  for (let key in fuelCart) {
+    if (fuelCart[key] > 0) {
+      count += fuelCart[key];
+      const price = fuelPrices[fuelTypes[key]][key] * fuelCart[key];
+      total += price;
+      items.innerHTML += `<div>${key} × ${fuelCart[key]} = ₹${price}</div>`;
+    }
+  }
+  wrap.style.display = count ? "block" : "none";
+  totalBox.innerHTML = `Total: ₹${total}`;
+}
+
+/* ================= REAL GPS ================= */
+function getCurrentLocation() {
+  const status = document.getElementById("location-status");
+
+  if (!navigator.geolocation) {
+    alert("GPS not supported");
+    return;
+  }
+
+  status.className = "location-status location-loading";
+  status.innerText = "📍 Getting real-time location...";
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      document.getElementById("latitude").value = lat;
+      document.getElementById("longitude").value = lon;
+
+      // Reverse geocode
+      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+      const data = await res.json();
+      document.getElementById("task-location").value =
+        data.city || data.locality || "Live GPS Location";
+
+      status.className = "location-status location-success";
+      status.innerText = "✅ Location detected";
+    },
+    err => {
+      status.className = "location-status location-error";
+      status.innerText = "❌ Location permission denied";
+    },
+    { enableHighAccuracy: true }
+  );
+}
+
+/* ================= TASK SUBMIT (BACKEND) ================= */
+document.getElementById("task-form").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("user_role");
-
+  const token = getToken();
   if (!token) {
-    alert("❌ Please login first");
-    window.location.href = "index.html";
+    alert("Please login first");
+    return;
+  }
+  if (getRole() !== "customer") {
+    alert("Only customer can create task");
     return;
   }
 
-  if (role !== "customer") {
-    alert("❌ Only customers can create tasks");
-    return;
-  }
-
-  const taskData = {
+  const payload = {
     title: document.getElementById("task-category").value,
     description: document.getElementById("task-description").value,
     location: document.getElementById("task-location").value,
     urgency: document.getElementById("task-urgency").value,
     reward_amount: 0,
     extra_data: {
-      components: document.getElementById("Components")?.value || "",
-      mechanicProblem: document.getElementById("mechanic-problem")?.value || "",
+      components: document.getElementById("Components").value,
+      mechanic_problem: document.getElementById("mechanic-problem").value,
       date: document.getElementById("task-date").value,
       time: document.getElementById("task-time").value,
       contact: document.getElementById("task-contact").value,
-      fuelCart: fuelCart || {},
       latitude: document.getElementById("latitude").value,
       longitude: document.getElementById("longitude").value,
+      fuel_cart: fuelCart,
       instructions: document.getElementById("special-instructions").value
     }
   };
 
-  if (!taskData.title || !taskData.location || !taskData.urgency) {
-    alert("❌ Please fill required fields");
+  if (!payload.title || !payload.location || !payload.urgency) {
+    alert("Fill required fields");
     return;
   }
 
   try {
-    const res = await fetch(`${BASE_URL}/tasks`, {
+    const res = await fetch(`${API_BASE}/tasks`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
       },
-      body: JSON.stringify(taskData)
+      body: JSON.stringify(payload)
     });
 
     const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
 
-    if (!res.ok) {
-      alert("❌ " + data.message);
-      return;
-    }
-
-    alert("✅ Task posted successfully!");
+    alert("✅ Task created successfully");
     window.location.href = "Home.html";
 
   } catch (err) {
-    console.error(err);
-    alert("❌ Server error");
+    alert("❌ " + err.message);
   }
-}
-
-/* ========== FORM CONNECTION ========== */
-document.getElementById("task-form").onsubmit = handleTaskCreate;
+});
 </script>
+
 
 </body>
 
 
 </html>
+
 
