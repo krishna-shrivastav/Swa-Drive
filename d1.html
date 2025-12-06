@@ -1223,471 +1223,86 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
     </div>
   </div>
 
-  <script>
-    // Fuel cart functionality - Updated with fuel types
-    let fuelCart = {};
-    let fuelTypes = {
-      '1-ltr': 'petrol',
-      '2-ltrs': 'petrol',
-      '3-ltrs': 'petrol',
-      '5-ltrs': 'petrol',
-      'jerry-10l': 'petrol',
-      'jerry-20l': 'petrol'
-    };
+<!-- ✅ SAME HTML & CSS ABOVE AS YOU SENT (UNCHANGED) -->
 
-    const fuelPrices = {
-      'petrol': { '1-ltr': 120, '2-ltrs': 240, '3-ltrs': 360, '5-ltrs': 600, 'jerry-10l': 1200, 'jerry-20l': 2400 },
-      'diesel': { '1-ltr': 95, '2-ltrs': 190, '3-ltrs': 285, '5-ltrs': 475, 'jerry-10l': 950, 'jerry-20l': 1900 },
-      'mobil': { '1-ltr': 850, '2-ltrs': 1700, '3-ltrs': 2550, '5-ltrs': 4250, 'jerry-10l': 8500, 'jerry-20l': 17000 }
-    };
+<!-- ✅ बस नीचे वाला <script> पूरा REPLACE करो -->
+<script>
+const BASE_URL = "https://swadrive-backend.onrender.com/api";
 
-    const fuelDisplayNames = {
-      'petrol': '⛽ Petrol',
-      'diesel': '🚛 Diesel',
-      'mobil': '🛢️ Mobil Oil'
-    };
+/* ========== TASK CREATE (BACKEND) ========== */
+async function handleTaskCreate(e) {
+  e.preventDefault();
 
-    function selectFuelType(container, fuelType, price) {
-      // Update fuel type for this container
-      fuelTypes[container] = fuelType;
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("user_role");
 
-      // Update active button styling
-      const buttons = document.querySelectorAll(`[data-container="${container}"]`);
-      buttons.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "index.html";
+    return;
+  }
 
-      // Update price display
-      const priceElement = document.getElementById(`price-${container}`);
-      const containerSize = container.includes('jerry-20l') ? '20L' :
-        container.includes('jerry-10l') ? '10L' :
-          container.includes('5-ltrs') ? '5L' :
-            container.includes('3-ltrs') ? '3L' :
-              container.includes('2-ltrs') ? '2L' : '1L';
-      priceElement.textContent = `₹${price}/${containerSize}`;
+  if (role !== "customer") {
+    alert("❌ Only customers can create tasks");
+    return;
+  }
 
-      // Update fuel info
-      const infoElement = document.getElementById(`fuel-info-${container}`);
-      infoElement.textContent = `${fuelDisplayNames[fuelType]} selected`;
-
-      // Update cart if this container has quantity
-      if (fuelCart[container] > 0) {
-        updateCartSummary();
-      }
+  const taskData = {
+    title: document.getElementById("task-category").value,
+    description: document.getElementById("task-description").value,
+    location: document.getElementById("task-location").value,
+    urgency: document.getElementById("task-urgency").value,
+    reward_amount: 0,
+    extra_data: {
+      components: document.getElementById("Components")?.value || "",
+      mechanicProblem: document.getElementById("mechanic-problem")?.value || "",
+      date: document.getElementById("task-date").value,
+      time: document.getElementById("task-time").value,
+      contact: document.getElementById("task-contact").value,
+      fuelCart: fuelCart || {},
+      latitude: document.getElementById("latitude").value,
+      longitude: document.getElementById("longitude").value,
+      instructions: document.getElementById("special-instructions").value
     }
+  };
 
-    function updateQuantity(fuelType, change) {
-      if (!fuelCart[fuelType]) {
-        fuelCart[fuelType] = 0;
-      }
+  if (!taskData.title || !taskData.location || !taskData.urgency) {
+    alert("❌ Please fill required fields");
+    return;
+  }
 
-      fuelCart[fuelType] += change;
-
-      if (fuelCart[fuelType] < 0) {
-        fuelCart[fuelType] = 0;
-      }
-
-      // Update display
-      document.getElementById(`qty-${fuelType}`).textContent = fuelCart[fuelType];
-
-      // Update minus button state
-      const minusBtn = document.querySelector(`[onclick="updateQuantity('${fuelType}', -1)"]`);
-      minusBtn.disabled = fuelCart[fuelType] === 0;
-
-      // Add visual feedback for selected items
-      const fuelItem = document.getElementById(`fuel-${fuelType}`);
-      if (fuelCart[fuelType] > 0) {
-        fuelItem.classList.add('selected');
-      } else {
-        fuelItem.classList.remove('selected');
-      }
-
-      updateCartSummary();
-    }
-
-    function updateCartSummary() {
-      const cartSummary = document.getElementById('cart-summary-compact');
-      const cartItems = document.getElementById('cart-items-compact');
-      const cartTotal = document.getElementById('cart-total');
-
-      // Clear previous items
-      cartItems.innerHTML = '';
-
-      let totalItems = 0;
-      let totalPrice = 0;
-      let hasItems = false;
-
-      // Container size names for display
-      const containerNames = {
-        '1-ltr': '1L',
-        '2-ltrs': '2L',
-        '3-ltrs': '3L',
-        '5-ltrs': '5L',
-        'jerry-10l': 'Jerry 10L',
-        'jerry-20l': 'Jerry 20L'
-      };
-
-      // Add items to cart display
-      for (const [container, quantity] of Object.entries(fuelCart)) {
-        if (quantity > 0) {
-          hasItems = true;
-          totalItems += quantity;
-          const selectedFuelType = fuelTypes[container];
-          const itemPrice = fuelPrices[selectedFuelType][container] * quantity;
-          totalPrice += itemPrice;
-
-          const cartItem = document.createElement('div');
-          cartItem.className = 'cart-item-compact';
-          cartItem.innerHTML = `
-            <span>${containerNames[container]} ${fuelDisplayNames[selectedFuelType]} ×${quantity}</span>
-            <span>₹${itemPrice}</span>
-          `;
-          cartItems.appendChild(cartItem);
-        }
-      }
-
-      // Update total
-      if (hasItems) {
-        cartTotal.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span><strong>Total: ${totalItems} containers</strong></span>
-            <span><strong>₹${totalPrice}</strong></span>
-          </div>
-        `;
-      }
-
-      // Show/hide cart summary
-      cartSummary.style.display = hasItems ? 'block' : 'none';
-    }
-
-    // GPS Location functionality
-    function getCurrentLocation() {
-      const statusDiv = document.getElementById('location-status');
-      const locationInput = document.getElementById('task-location');
-
-      // Show loading state
-      statusDiv.className = 'location-status location-loading';
-      statusDiv.textContent = '📍 Getting your location...';
-      statusDiv.classList.remove('hidden');
-
-      if (!navigator.geolocation) {
-        showLocationError('🚫 Geolocation is not supported by this browser. Please use manual entry.');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        function (position) {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
-
-          // Store coordinates
-          document.getElementById('latitude').value = latitude;
-          document.getElementById('longitude').value = longitude;
-
-          // Use reverse geocoding to get address (using a free service)
-          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-            .then(response => response.json())
-            .then(data => {
-              const address = data.display_name || `${data.locality}, ${data.city}, ${data.principalSubdivision}`;
-              locationInput.value = address;
-
-              statusDiv.className = 'location-status location-success';
-              statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Location detected successfully!`;
-            })
-            .catch(error => {
-              // If reverse geocoding fails, still show coordinates
-              locationInput.value = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
-              statusDiv.className = 'location-status location-success';
-              statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Coordinates captured successfully!`;
-            });
-        },
-        function (error) {
-          let errorMessage = '';
-          let helpText = '';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = '🔒 Location access denied by user.';
-              helpText = `
-                <br><strong>To enable location:</strong><br>
-                📱 <strong>Mobile:</strong> Tap the 🔒 icon in address bar → Allow Location<br>
-                💻 <strong>Desktop:</strong> Click the 🔒 icon left of URL → Allow Location<br>
-                🔄 Then refresh and try again, or use manual entry below.
-              `;
-              enableManualLocation();
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = '📡 Location information is unavailable.';
-              helpText = '<br>Please check your GPS/internet connection or use manual entry.';
-              enableManualLocation();
-              break;
-            case error.TIMEOUT:
-              errorMessage = '⏰ Location request timed out.';
-              helpText = '<br>Please try again or use manual entry.';
-              enableManualLocation();
-              break;
-            default:
-              errorMessage = '❌ Unknown error occurred while getting location.';
-              helpText = '<br>Please use manual location entry.';
-              enableManualLocation();
-              break;
-          }
-          showLocationError(errorMessage + helpText);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 300000
-        }
-      );
-    }
-
-    function enableManualLocation() {
-      const locationInput = document.getElementById('task-location');
-      const statusDiv = document.getElementById('location-status');
-      const suggestionsDiv = document.getElementById('location-suggestions');
-
-      // Make input field editable
-      locationInput.readOnly = false;
-      locationInput.placeholder = 'Enter your area, landmark, or address (e.g., Golghar, Gorakhpur)';
-      locationInput.focus();
-
-      // Show quick suggestions
-      suggestionsDiv.classList.remove('hidden');
-
-      // Update status
-      statusDiv.className = 'location-status location-success';
-      statusDiv.innerHTML = `<i class="fas fa-edit"></i> ✍️ Manual location entry enabled. Type your location below.`;
-      statusDiv.classList.remove('hidden');
-    }
-
-    function setQuickLocation(location) {
-      const locationInput = document.getElementById('task-location');
-      const statusDiv = document.getElementById('location-status');
-
-      locationInput.value = location;
-
-      statusDiv.className = 'location-status location-success';
-      statusDiv.innerHTML = `<i class="fas fa-map-marker"></i> 📍 Location set to: ${location}`;
-    }
-
-    function showLocationError(message) {
-      const statusDiv = document.getElementById('location-status');
-      statusDiv.className = 'location-status location-error';
-      statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-    }
-
-    // Function to toggle fuel section visibility
-    function toggleFuelSection() {
-      const category = document.getElementById('task-category').value;
-      const fuelSection = document.getElementById('fuel-cart-section');
-
-      // Categories that require fuel selection
-      const fuelCategories = ['fuels', 'mechanic-fuels', 'full-service'];
-
-      if (fuelCategories.includes(category)) {
-        fuelSection.style.display = 'block';
-        // Smooth scroll to fuel section
-        setTimeout(() => {
-          fuelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 300);
-      } else {
-        fuelSection.style.display = 'none';
-        // Clear any selected fuel when hiding section
-        fuelCart = {};
-        fuelTypes = {
-          '1-ltr': 'petrol',
-          '2-ltrs': 'petrol',
-          '3-ltrs': 'petrol',
-          'jerry-10l': 'petrol'
-        };
-        mobilBrands = {
-          '1-ltr': 'Mobil 1',
-          '2-ltrs': 'Mobil 1',
-          '3-ltrs': 'Mobil 1',
-          'jerry-10l': 'Mobil 1'
-        };
-        updateCartSummary();
-
-        // Reset quantity displays
-        document.querySelectorAll('.quantity-display-compact').forEach(display => {
-          display.textContent = '0';
-        });
-
-        // Reset all buttons and selected states
-        document.querySelectorAll('.quantity-btn-compact').forEach(btn => {
-          btn.disabled = false;
-        });
-
-        document.querySelectorAll('.fuel-item-compact').forEach(item => {
-          item.classList.remove('selected');
-        });
-
-        // Reset fuel type selections to petrol
-        document.querySelectorAll('.fuel-type-btn').forEach(btn => {
-          btn.classList.remove('active');
-          if (btn.classList.contains('petrol')) {
-            btn.classList.add('active');
-          }
-        });
-
-        // Hide all mobil oil selectors
-        document.querySelectorAll('.mobil-oil-selector').forEach(selector => {
-          selector.classList.remove('active');
-        });
-
-        // Reset mobil oil selections
-        document.querySelectorAll('.mobil-oil-btn').forEach(btn => {
-          btn.classList.remove('selected');
-          if (btn.textContent === 'Mobil 1') {
-            btn.classList.add('selected');
-          }
-        });
-
-        // Reset all fuel info texts
-        document.querySelectorAll('[id^="fuel-info-"]').forEach(info => {
-          info.textContent = 'Petrol selected';
-        });
-
-        // Reset all prices to petrol prices
-        document.getElementById('price-1-ltr').textContent = '₹120/1L';
-        document.getElementById('price-2-ltrs').textContent = '₹240/2L';
-        document.getElementById('price-3-ltrs').textContent = '₹360/3L';
-        document.getElementById('price-jerry-10l').textContent = '₹1200/10L';
-      }
-    }
-
-    // Initialize today's date as default
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    document.getElementById('task-date').value = formattedDate;
-
-    // Form submission handling
-    document.getElementById('task-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      // Add fuel cart data to form
-      const cartData = JSON.stringify(fuelCart);
-      const cartInput = document.createElement('input');
-      cartInput.type = 'hidden';
-      cartInput.name = 'fuel-cart';
-      cartInput.value = cartData;
-      this.appendChild(cartInput);
-
-      // Basic validation
-      const category = document.getElementById('task-category').value;
-      const urgency = document.getElementById('task-urgency').value;
-      const location = document.getElementById('task-location').value;
-
-      if (!category || !urgency || !location) {
-        alert('Please fill all required fields');
-        return;
-      }
-
-      // Check if fuel is selected when category is fuel-related
-      const fuelRequiredCategories = ['fuels', 'mechanic-fuels', 'full-service'];
-      if (fuelRequiredCategories.includes(category) && Object.values(fuelCart).every(qty => qty === 0)) {
-        alert('Please select fuel quantities for fuel-related services');
-        return;
-      }
-
-      // Show success message (in a real app, this would submit the form)
-      alert('Your task has been successfully posted! Nearby helpers will be notified.');
-
-      // Reset form and cart
-      this.reset();
-      fuelCart = {};
-      updateCartSummary();
-
-      // Reset quantity displays
-      document.querySelectorAll('.quantity-display-compact').forEach(display => {
-        display.textContent = '0';
-      });
-
-      // Reset all minus buttons and selected states
-      document.querySelectorAll('.quantity-btn-compact').forEach(btn => {
-        btn.disabled = false;
-      });
-
-      document.querySelectorAll('.fuel-item-compact').forEach(item => {
-        item.classList.remove('selected');
-      });
+  try {
+    const res = await fetch(`${BASE_URL}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(taskData)
     });
 
+    const data = await res.json();
 
-
-
-
-    window.onload = function () {
-      const editIndex = localStorage.getItem("editIndex");
-      if (editIndex !== null) {
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        const task = tasks[editIndex];
-        if (task) {
-          document.querySelector('#task-category').value = task.category;
-          document.querySelector('#Components').value = task.component;
-          document.querySelector('#task-urgency').value = task.urgency;
-          document.querySelector('#mechanic-problem').value = task.mechanicProblem;
-          document.querySelector('#task-description').value = task.description;
-          document.querySelector('#task-location').value = task.location;
-          document.querySelector('#latitude').value = task.latitude;
-          document.querySelector('#longitude').value = task.longitude;
-          document.querySelector('#task-date').value = task.date;
-          document.querySelector('#task-time').value = task.time;
-          document.getElementById("task-contact").value = task.contact;
-          document.querySelector('#special-instructions').value = task.specialInstructions;
-        }
-      }
-    };
-
-    function handleamr(event) {
-      event.preventDefault();
-
-      // collect values same as before ...
-      const category = document.querySelector('#task-category').value;
-      const component = document.querySelector('#Components').value;
-      const urgency = document.querySelector('#task-urgency').value;
-      const mechanicProblem = document.querySelector('#mechanic-problem').value;
-      const description = document.querySelector('#task-description').value;
-      const location = document.querySelector('#task-location').value;
-      const latitude = document.querySelector('#latitude').value;
-      const longitude = document.querySelector('#longitude').value;
-      const date = document.querySelector('#task-date').value;
-      const time = document.querySelector('#task-time').value;
-      const contact = document.getElementById("task-contact").value;
-      const specialInstructions = document.querySelector('#special-instructions').value;
-
-      const photos = document.querySelector('#task-photo').files;
-      let photoNames = [];
-      for (let i = 0; i < photos.length; i++) {
-        photoNames.push(photos[i].name);
-      }
-
-      const taskData = {
-        category, component, urgency, mechanicProblem,
-        description, location, latitude, longitude,
-        date,contact, time, specialInstructions, photos: photoNames
-      };
-
-      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-      const editIndex = localStorage.getItem("editIndex");
-
-      if (editIndex !== null) {
-        tasks[editIndex] = taskData; // update existing
-        localStorage.removeItem("editIndex"); // clear edit mode
-      } else {
-        tasks.push(taskData); // new task
-      }
-
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-      alert("✅ Task saved successfully!");
-      window.location.href = "task_detail.html";
+    if (!res.ok) {
+      alert("❌ " + data.message);
+      return;
     }
 
+    alert("✅ Task posted successfully!");
+    window.location.href = "Home.html";
 
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server error");
+  }
+}
 
+/* ========== FORM CONNECTION ========== */
+document.getElementById("task-form").onsubmit = handleTaskCreate;
+</script>
 
-
-  </script>
 </body>
 
 
 </html>
+
