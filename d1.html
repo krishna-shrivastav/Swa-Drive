@@ -1224,160 +1224,523 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
   </div>
 
 <script>
-/* ================= CONFIG ================= */
-const API_BASE = "https://swadrive-backend.onrender.com/api";
+  // ======  CONFIG  ======
+  // 👇 इसे अपने Railway backend के URL से बदलना है
+  // Example: const BACKEND_URL = 'https://swadrive-backend.up.railway.app';
+  const BACKEND_URL = 'https://YOUR-RAILWAY-APP-URL.up.railway.app';
 
-/* ================= AUTH ================= */
-function getToken() {
-  return localStorage.getItem("token");
-}
-function getRole() {
-  return localStorage.getItem("user_role");
-}
+  // ====== Fuel Cart Data ======
+  let fuelCart = {}; // { '1-ltr': 2, '2-ltrs': 1, ... }
+  let fuelTypes = {
+    '1-ltr': 'petrol',
+    '2-ltrs': 'petrol',
+    '3-ltrs': 'petrol',
+    'jerry-10l': 'petrol'
+  };
 
-/* ================= FUEL CART ================= */
-let fuelCart = {};
-let fuelTypes = {
-  "1-ltr": "petrol",
-  "2-ltrs": "petrol",
-  "3-ltrs": "petrol",
-  "jerry-10l": "petrol"
-};
+  // Mobil oil brand (sirf text info ke liye)
+  let mobilBrands = {
+    '1-ltr': 'Mobil 1',
+    '2-ltrs': 'Mobil 1',
+    '3-ltrs': 'Mobil 1',
+    'jerry-10l': 'Mobil 1'
+  };
 
-const fuelPrices = {
-  petrol: { "1-ltr": 120, "2-ltrs": 240, "3-ltrs": 360, "jerry-10l": 1200 },
-  diesel: { "1-ltr": 95, "2-ltrs": 190, "3-ltrs": 285, "jerry-10l": 950 },
-  mobil: { "1-ltr": 850, "2-ltrs": 1700 }
-};
-
-function updateQuantity(type, change) {
-  fuelCart[type] = Math.max(0, (fuelCart[type] || 0) + change);
-  document.getElementById(`qty-${type}`).innerText = fuelCart[type];
-  updateCartSummary();
-}
-
-function updateCartSummary() {
-  const wrap = document.getElementById("cart-summary-compact");
-  const items = document.getElementById("cart-items-compact");
-  const totalBox = document.getElementById("cart-total");
-  items.innerHTML = "";
-
-  let total = 0;
-  let count = 0;
-
-  for (let key in fuelCart) {
-    if (fuelCart[key] > 0) {
-      count += fuelCart[key];
-      const price = fuelPrices[fuelTypes[key]][key] * fuelCart[key];
-      total += price;
-      items.innerHTML += `<div>${key} × ${fuelCart[key]} = ₹${price}</div>`;
-    }
-  }
-  wrap.style.display = count ? "block" : "none";
-  totalBox.innerHTML = `Total: ₹${total}`;
-}
-
-/* ================= REAL GPS ================= */
-function getCurrentLocation() {
-  const status = document.getElementById("location-status");
-
-  if (!navigator.geolocation) {
-    alert("GPS not supported");
-    return;
-  }
-
-  status.className = "location-status location-loading";
-  status.innerText = "📍 Getting real-time location...";
-
-  navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-
-      document.getElementById("latitude").value = lat;
-      document.getElementById("longitude").value = lon;
-
-      // Reverse geocode
-      const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
-      const data = await res.json();
-      document.getElementById("task-location").value =
-        data.city || data.locality || "Live GPS Location";
-
-      status.className = "location-status location-success";
-      status.innerText = "✅ Location detected";
+  const fuelPrices = {
+    petrol: {
+      '1-ltr': 120,
+      '2-ltrs': 240,
+      '3-ltrs': 360,
+      'jerry-10l': 1200
     },
-    err => {
-      status.className = "location-status location-error";
-      status.innerText = "❌ Location permission denied";
+    diesel: {
+      '1-ltr': 95,
+      '2-ltrs': 190,
+      '3-ltrs': 285,
+      'jerry-10l': 950
     },
-    { enableHighAccuracy: true }
-  );
-}
-
-/* ================= TASK SUBMIT (BACKEND) ================= */
-document.getElementById("task-form").addEventListener("submit", async e => {
-  e.preventDefault();
-
-  const token = getToken();
-  if (!token) {
-    alert("Please login first");
-    return;
-  }
-  if (getRole() !== "customer") {
-    alert("Only customer can create task");
-    return;
-  }
-
-  const payload = {
-    title: document.getElementById("task-category").value,
-    description: document.getElementById("task-description").value,
-    location: document.getElementById("task-location").value,
-    urgency: document.getElementById("task-urgency").value,
-    reward_amount: 0,
-    extra_data: {
-      components: document.getElementById("Components").value,
-      mechanic_problem: document.getElementById("mechanic-problem").value,
-      date: document.getElementById("task-date").value,
-      time: document.getElementById("task-time").value,
-      contact: document.getElementById("task-contact").value,
-      latitude: document.getElementById("latitude").value,
-      longitude: document.getElementById("longitude").value,
-      fuel_cart: fuelCart,
-      instructions: document.getElementById("special-instructions").value
+    mobil: {
+      '1-ltr': 850,
+      '2-ltrs': 1700,
+      '3-ltrs': 2550,
+      'jerry-10l': 8500
     }
   };
 
-  if (!payload.title || !payload.location || !payload.urgency) {
-    alert("Fill required fields");
-    return;
+  const fuelDisplayNames = {
+    petrol: '⛽ Petrol',
+    diesel: '🚛 Diesel',
+    mobil: '🛢️ Mobil Oil'
+  };
+
+  // ====== Fuel type select (Petrol/Diesel/Mobil) ======
+  function selectFuelType(container, fuelType, price) {
+    fuelTypes[container] = fuelType;
+
+    // active button styling
+    const buttons = document.querySelectorAll(`[data-container="${container}"]`);
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // mobil oil selector show/hide
+    const mobilSelector = document.getElementById(`mobil-selector-${container}`);
+    if (mobilSelector) {
+      if (fuelType === 'mobil') {
+        mobilSelector.classList.add('active');
+      } else {
+        mobilSelector.classList.remove('active');
+      }
+    }
+
+    // price text
+    const priceElement = document.getElementById(`price-${container}`);
+    const containerSize =
+      container.includes('jerry-10l') ? '10L' :
+      container.includes('3-ltrs') ? '3L' :
+      container.includes('2-ltrs') ? '2L' : '1L';
+    priceElement.textContent = `₹${price}/${containerSize}`;
+
+    // info text
+    const infoElement = document.getElementById(`fuel-info-${container}`);
+    if (fuelType === 'mobil') {
+      infoElement.textContent = `${fuelDisplayNames[fuelType]} (${mobilBrands[container]}) selected`;
+    } else {
+      infoElement.textContent = `${fuelDisplayNames[fuelType]} selected`;
+    }
+
+    // if already quantity hai to cart update
+    if (fuelCart[container] > 0) {
+      updateCartSummary();
+    }
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/tasks`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
+  // ====== Mobil oil brand select ======
+  function selectMobilType(container, brand, price) {
+    mobilBrands[container] = brand;
+
+    // button highlight
+    const selector = document.getElementById(`mobil-selector-${container}`);
+    if (selector) {
+      const buttons = selector.querySelectorAll('.mobil-oil-btn');
+      buttons.forEach(btn => btn.classList.remove('selected'));
+    }
+    event.target.classList.add('selected');
+
+    // price text update (display only)
+    const priceElement = document.getElementById(`price-${container}`);
+    const containerSize =
+      container.includes('jerry-10l') ? '10L' :
+      container.includes('3-ltrs') ? '3L' :
+      container.includes('2-ltrs') ? '2L' : '1L';
+    priceElement.textContent = `₹${price}/${containerSize} (${brand})`;
+
+    const infoElement = document.getElementById(`fuel-info-${container}`);
+    infoElement.textContent = `🛢️ Mobil Oil: ${brand} selected`;
+
+    // cart summary re-calc
+    if (fuelCart[container] > 0) {
+      updateCartSummary();
+    }
+  }
+
+  // ====== Quantity +/- ======
+  function updateQuantity(containerKey, change) {
+    if (!fuelCart[containerKey]) {
+      fuelCart[containerKey] = 0;
+    }
+
+    fuelCart[containerKey] += change;
+    if (fuelCart[containerKey] < 0) fuelCart[containerKey] = 0;
+
+    // display update
+    document.getElementById(`qty-${containerKey}`).textContent = fuelCart[containerKey];
+
+    // minus btn disable/enable
+    const minusBtn = document.querySelector(
+      `[onclick="updateQuantity('${containerKey}', -1)"]`
+    );
+    if (minusBtn) minusBtn.disabled = fuelCart[containerKey] === 0;
+
+    // card highlight
+    const fuelItem = document.getElementById(`fuel-${containerKey}`);
+    if (fuelItem) {
+      if (fuelCart[containerKey] > 0) {
+        fuelItem.classList.add('selected');
+      } else {
+        fuelItem.classList.remove('selected');
+      }
+    }
+
+    updateCartSummary();
+  }
+
+  // ====== Cart summary ======
+  function updateCartSummary() {
+    const cartSummary = document.getElementById('cart-summary-compact');
+    const cartItems = document.getElementById('cart-items-compact');
+    const cartTotal = document.getElementById('cart-total');
+
+    cartItems.innerHTML = '';
+
+    let totalItems = 0;
+    let totalPrice = 0;
+    let hasItems = false;
+
+    const containerNames = {
+      '1-ltr': '1L',
+      '2-ltrs': '2L',
+      '3-ltrs': '3L',
+      'jerry-10l': 'Jerry 10L'
+    };
+
+    for (const [container, quantity] of Object.entries(fuelCart)) {
+      if (quantity > 0) {
+        hasItems = true;
+        totalItems += quantity;
+        const selectedFuelType = fuelTypes[container];
+        const itemPrice = (fuelPrices[selectedFuelType] || {})[container] * quantity || 0;
+        totalPrice += itemPrice;
+
+        const cartItem = document.createElement('div');
+        cartItem.className = 'cart-item-compact';
+        const extra =
+          selectedFuelType === 'mobil' ? ` (${mobilBrands[container]})` : '';
+        cartItem.innerHTML = `
+          <span>${containerNames[container]} ${fuelDisplayNames[selectedFuelType]}${extra} ×${quantity}</span>
+          <span>₹${itemPrice}</span>
+        `;
+        cartItems.appendChild(cartItem);
+      }
+    }
+
+    if (hasItems) {
+      cartTotal.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span><strong>Total: ${totalItems} containers</strong></span>
+          <span><strong>₹${totalPrice}</strong></span>
+        </div>
+      `;
+    } else {
+      cartTotal.innerHTML = '';
+    }
+
+    cartSummary.style.display = hasItems ? 'block' : 'none';
+  }
+
+  // ====== GPS Location (with live lat/lng text) ======
+  function getCurrentLocation() {
+    const statusDiv = document.getElementById('location-status');
+    const locationInput = document.getElementById('task-location');
+
+    statusDiv.className = 'location-status location-loading';
+    statusDiv.textContent = '📍 Getting your location...';
+    statusDiv.classList.remove('hidden');
+
+    if (!navigator.geolocation) {
+      showLocationError('🚫 Geolocation is not supported by this browser. Please use manual entry.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        document.getElementById('latitude').value = latitude;
+        document.getElementById('longitude').value = longitude;
+
+        // reverse geocode
+        fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        )
+          .then(response => response.json())
+          .then(data => {
+            const address =
+              data.display_name ||
+              `${data.locality || ''}, ${data.city || ''}, ${data.principalSubdivision || ''}`;
+            locationInput.value = address;
+
+            statusDiv.className = 'location-status location-success';
+            statusDiv.innerHTML =
+              `<i class="fas fa-check-circle"></i> ✅ Location detected!<br>` +
+              `🌐 Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+          })
+          .catch(error => {
+            locationInput.value = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+            statusDiv.className = 'location-status location-success';
+            statusDiv.innerHTML =
+              `<i class="fas fa-check-circle"></i> ✅ Coordinates captured!<br>` +
+              `🌐 Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+          });
       },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-
-    alert("✅ Task created successfully");
-    window.location.href = "Home.html";
-
-  } catch (err) {
-    alert("❌ " + err.message);
+      function (error) {
+        let errorMessage = '';
+        let helpText = '';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = '🔒 Location access denied by user.';
+            helpText = `
+              <br><strong>To enable location:</strong><br>
+              📱 Mobile: Address bar 🔒 → Allow Location<br>
+              💻 Desktop: URL ke left 🔒 icon → Allow Location<br>
+              🔄 Fir page refresh karke dobara try karo ya manual entry use karo.
+            `;
+            enableManualLocation();
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = '📡 Location information is unavailable.';
+            helpText = '<br>Please check GPS/Internet or use manual entry.';
+            enableManualLocation();
+            break;
+          case error.TIMEOUT:
+            errorMessage = '⏰ Location request timed out.';
+            helpText = '<br>Please try again or use manual entry.';
+            enableManualLocation();
+            break;
+          default:
+            errorMessage = '❌ Unknown error occurred while getting location.';
+            helpText = '<br>Please use manual location entry.';
+            enableManualLocation();
+            break;
+        }
+        showLocationError(errorMessage + helpText);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000
+      }
+    );
   }
-});
+
+  function enableManualLocation() {
+    const locationInput = document.getElementById('task-location');
+    const statusDiv = document.getElementById('location-status');
+    const suggestionsDiv = document.getElementById('location-suggestions');
+
+    locationInput.readOnly = false;
+    locationInput.placeholder = 'Enter your area, landmark, or address (e.g., Golghar, Gorakhpur)';
+    locationInput.focus();
+
+    suggestionsDiv.classList.remove('hidden');
+
+    statusDiv.className = 'location-status location-success';
+    statusDiv.innerHTML = `<i class="fas fa-edit"></i> ✍️ Manual location entry enabled. Type your location below.`;
+    statusDiv.classList.remove('hidden');
+  }
+
+  function setQuickLocation(location) {
+    const locationInput = document.getElementById('task-location');
+    const statusDiv = document.getElementById('location-status');
+
+    locationInput.value = location;
+
+    statusDiv.className = 'location-status location-success';
+    statusDiv.innerHTML = `<i class="fas fa-map-marker"></i> 📍 Location set to: ${location}`;
+  }
+
+  function showLocationError(message) {
+    const statusDiv = document.getElementById('location-status');
+    statusDiv.className = 'location-status location-error';
+    statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+  }
+
+  // ====== Fuel section show/hide by category ======
+  function toggleFuelSection() {
+    const category = document.getElementById('task-category').value;
+    const fuelSection = document.getElementById('fuel-cart-section');
+
+    const fuelCategories = ['fuels', 'mechanic-fuels', 'full-service'];
+
+    if (fuelCategories.includes(category)) {
+      fuelSection.style.display = 'block';
+      setTimeout(() => {
+        fuelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    } else {
+      fuelSection.style.display = 'none';
+      // reset cart
+      fuelCart = {};
+      fuelTypes = {
+        '1-ltr': 'petrol',
+        '2-ltrs': 'petrol',
+        '3-ltrs': 'petrol',
+        'jerry-10l': 'petrol'
+      };
+      mobilBrands = {
+        '1-ltr': 'Mobil 1',
+        '2-ltrs': 'Mobil 1',
+        '3-ltrs': 'Mobil 1',
+        'jerry-10l': 'Mobil 1'
+      };
+      updateCartSummary();
+
+      document.querySelectorAll('.quantity-display-compact').forEach(d => (d.textContent = '0'));
+      document.querySelectorAll('.quantity-btn-compact').forEach(btn => (btn.disabled = false));
+      document.querySelectorAll('.fuel-item-compact').forEach(item => item.classList.remove('selected'));
+
+      // fuel buttons reset
+      document.querySelectorAll('.fuel-type-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.classList.contains('petrol')) btn.classList.add('active');
+      });
+
+      // mobil selector hide
+      document.querySelectorAll('.mobil-oil-selector').forEach(sel => sel.classList.remove('active'));
+      document.querySelectorAll('.mobil-oil-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.textContent.trim().startsWith('Mobil 1')) btn.classList.add('selected');
+      });
+
+      document.querySelectorAll('[id^="fuel-info-"]').forEach(info => {
+        info.textContent = 'Petrol selected';
+      });
+
+      document.getElementById('price-1-ltr').textContent = '₹120/1L';
+      document.getElementById('price-2-ltrs').textContent = '₹240/2L';
+      document.getElementById('price-3-ltrs').textContent = '₹360/3L';
+      document.getElementById('price-jerry-10l').textContent = '₹1200/10L';
+    }
+  }
+
+  // ====== On page load (date + edit mode) ======
+  window.addEventListener('load', () => {
+    // default date = today
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    const dateInput = document.getElementById('task-date');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = formattedDate;
+    }
+
+    // edit mode from localStorage
+    const editIndex = localStorage.getItem('editIndex');
+    if (editIndex !== null) {
+      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      const task = tasks[editIndex];
+      if (task) {
+        document.querySelector('#task-category').value = task.category;
+        document.querySelector('#Components').value = task.component;
+        document.querySelector('#task-urgency').value = task.urgency;
+        document.querySelector('#mechanic-problem').value = task.mechanicProblem;
+        document.querySelector('#task-description').value = task.description;
+        document.querySelector('#task-location').value = task.location;
+        document.querySelector('#latitude').value = task.latitude;
+        document.querySelector('#longitude').value = task.longitude;
+        document.querySelector('#task-date').value = task.date;
+        document.querySelector('#task-time').value = task.time;
+        document.getElementById('task-contact').value = task.contact;
+        document.querySelector('#special-instructions').value = task.specialInstructions;
+
+        // agar category fuel wala hai to section open
+        toggleFuelSection();
+      }
+    }
+  });
+
+  // ====== MAIN FORM SUBMIT (GitHub + Backend + LocalStorage) ======
+  async function handleamr(event) {
+    event.preventDefault();
+
+    const category = document.querySelector('#task-category').value;
+    const component = document.querySelector('#Components').value;
+    const urgency = document.querySelector('#task-urgency').value;
+    const mechanicProblem = document.querySelector('#mechanic-problem').value;
+    const description = document.querySelector('#task-description').value;
+    const location = document.querySelector('#task-location').value;
+    const latitude = document.querySelector('#latitude').value;
+    const longitude = document.querySelector('#longitude').value;
+    const date = document.querySelector('#task-date').value;
+    const time = document.querySelector('#task-time').value;
+    const contact = document.getElementById('task-contact').value;
+    const specialInstructions = document.querySelector('#special-instructions').value;
+
+    // basic validation
+    if (!category || !urgency || !location || !date || !time || !contact) {
+      alert('⚠️ Please fill all required fields.');
+      return;
+    }
+
+    const fuelRequiredCategories = ['fuels', 'mechanic-fuels', 'full-service'];
+    if (fuelRequiredCategories.includes(category) && Object.values(fuelCart).every(qty => !qty || qty === 0)) {
+      alert('⚠️ Please select fuel quantities for fuel-related services.');
+      return;
+    }
+
+    const photos = document.querySelector('#task-photo').files;
+    let photoNames = [];
+    for (let i = 0; i < photos.length; i++) {
+      photoNames.push(photos[i].name);
+    }
+
+    const taskData = {
+      category,
+      component,
+      urgency,
+      mechanicProblem,
+      description,
+      location,
+      latitude,
+      longitude,
+      date,
+      time,
+      contact,
+      specialInstructions,
+      photos: photoNames,
+      fuelCart,
+      fuelTypes,
+      mobilBrands
+    };
+
+    // ---- 1) BACKEND को भेजो (Railway /addtask) ----
+    if (BACKEND_URL && !BACKEND_URL.includes('YOUR-RAILWAY-APP-URL')) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/addtask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(taskData)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.success === false) {
+          alert('❌ Task create failed (backend error).');
+          console.error('Backend error:', data);
+          return;
+        }
+      } catch (err) {
+        alert('❌ Task create failed: ' + err.message);
+        console.error(err);
+        return;
+      }
+    } else {
+      console.warn('BACKEND_URL set नहीं है, sirf localStorage में save होगा.');
+    }
+
+    // ---- 2) LocalStorage में save (GitHub Pages पे दिखाने के लिए) ----
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    const editIndex = localStorage.getItem('editIndex');
+
+    if (editIndex !== null) {
+      tasks[editIndex] = taskData;
+      localStorage.removeItem('editIndex');
+    } else {
+      tasks.push(taskData);
+    }
+
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+
+    alert('✅ Task saved & posted successfully!');
+    window.location.href = 'task_detail.html';
+  }
 </script>
+
 
 
 </body>
 
 
 </html>
+
 
 
