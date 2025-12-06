@@ -1225,19 +1225,18 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
 
 <script>
 /* ==================== CONFIG ==================== */
-const BACKEND_URL = "https://mellow-determination-production.up.railway.app";
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
 
 /* ==================== GPS ==================== */
 function getCurrentLocation() {
   const statusDiv = document.getElementById("location-status");
-  if (statusDiv) {
-    statusDiv.className = "location-status location-loading";
-    statusDiv.textContent = "📍 Getting your location...";
-    statusDiv.classList.remove("hidden");
-  }
+
+  statusDiv.className = "location-status location-loading";
+  statusDiv.textContent = "📍 Getting your location...";
+  statusDiv.classList.remove("hidden");
 
   if (!navigator.geolocation) {
-    alert("GPS not supported");
+    alert("❌ GPS not supported");
     return;
   }
 
@@ -1251,40 +1250,43 @@ function getCurrentLocation() {
       document.getElementById("task-location").value =
         `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
 
-      if (statusDiv) {
-        statusDiv.className = "location-status location-success";
-        statusDiv.innerHTML = `✅ Location detected<br>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
-      }
+      statusDiv.className = "location-status location-success";
+      statusDiv.innerHTML = `✅ Location detected<br>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
     },
-    () => {
-      alert("❌ Location permission denied");
+    err => {
+      statusDiv.className = "location-status location-error";
+      statusDiv.textContent = "❌ Location permission denied";
     },
     { enableHighAccuracy: true }
   );
 }
 
-/* ==================== FORM SUBMIT ==================== */
+/* ==================== TASK SUBMIT ==================== */
 async function handleamr(event) {
   event.preventDefault();
 
-  /* ✅ JWT TOKEN CHECK */
+  /* ✅ LOGIN CHECK */
   const token = localStorage.getItem("token");
   if (!token) {
     alert("❌ Please login first");
+    window.location.href = "login.html";
     return;
   }
 
-  /* ✅ FRONTEND → BACKEND MAPPING */
-  const body = {
-    title: document.getElementById("task-category").value,
+  /* ✅ COLLECT ALL FORM DATA (MATCH BACKEND) */
+  const payload = {
+    category: document.getElementById("task-category").value,
+    component: document.getElementById("Components").value,
+    mechanicProblem: document.getElementById("mechanic-problem").value,
     description: document.getElementById("task-description").value,
     location: document.getElementById("task-location").value,
     urgency: document.getElementById("task-urgency").value,
+    contact: document.getElementById("task-contact").value,
     reward_amount: 0
   };
 
-  /* ✅ BASIC VALIDATION */
-  if (!body.title || !body.urgency || !body.location) {
+  /* ✅ REQUIRED FIELDS CHECK */
+  if (!payload.category || !payload.urgency || !payload.location || !payload.contact) {
     alert("⚠️ Please fill all required fields");
     return;
   }
@@ -1296,26 +1298,27 @@ async function handleamr(event) {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(payload)
     });
 
     const data = await res.json();
 
     if (!res.ok) {
       console.error(data);
-      alert("❌ Task create failed");
+      alert("❌ Task create failed: " + (data.message || ""));
       return;
     }
 
-    alert("✅ Task created successfully");
+    alert("✅ Task created successfully!");
     window.location.href = "task_detail.html";
 
   } catch (err) {
     console.error(err);
-    alert("❌ Server error");
+    alert("❌ Server / Network error");
   }
 }
 </script>
+
 
 
 
