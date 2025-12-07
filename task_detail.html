@@ -102,95 +102,185 @@
 </div>
 
 <script>
-const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
 const taskList = document.getElementById("task-list");
 
-function renderTasks() {
-    taskList.innerHTML = "";
-    if(tasks.length===0){ taskList.innerHTML="<p>No tasks found!</p>"; return; }
+function formatDateTime(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleString("en-IN");
+}
 
-    tasks.forEach((task,index)=>{
-        const card=document.createElement("div");
-        card.classList.add("task-detail-card");
-        card.innerHTML=`
-        <div class="task-detail-header">
-            <h1 class="task-detail-title">Task #${index+1} - ${task.category}</h1>
-            <div class="task-status">${task.urgency || "Pending"}</div>
-        </div>
-        <div class="task-detail-content">
-            ${task.photos && task.photos.length>0 ? `<img src="${task.photos[0]}" class="task-image">` : ""}
-            <div class="task-detail-section">
-                <h3 class="section-title"><i class="fas fa-info-circle"></i> Task Details</h3>
-                <div class="detail-row"><div class="detail-label">Component</div><div class="detail-value">${task.component}</div></div>
-                <div class="detail-row"><div class="detail-label">Problem</div><div class="detail-value">${task.mechanicProblem}</div></div>
-                <div class="detail-row"><div class="detail-label">Date</div><div class="detail-value">${task.date}</div></div>
-                <div class="detail-row"><div class="detail-label">Time</div><div class="detail-value">${task.time}</div></div>
-                <div class="detail-row"><div class="detail-label">contact</div><div class="detail-value">${task.contact}</div></div>
-                <div class="detail-row"><div class="detail-label">Special Instructions</div><div class="detail-value">${task.specialInstructions||"None"}</div></div>
-            </div>
+/* ========== LOAD CUSTOMER TASKS FROM BACKEND ========== */
+async function loadTasks() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "login.html";
+    return;
+  }
 
-            <div class="section-divider"></div>
-
-            <div class="task-detail-section">
-                <h3 class="section-title"><i class="fas fa-align-left"></i> Description</h3>
-                <div class="task-description">${task.description}</div>
-            </div>
-
-            <div class="task-detail-section">
-                <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Location</h3>
-                <div class="map-container">
-                    <iframe src="https://www.google.com/maps?q=${task.latitude},${task.longitude}&output=embed" style="border:0;width:100%;height:100%;" allowfullscreen="" loading="lazy"></iframe>
-                </div>
-                <div class="detail-row"><div class="detail-label">Address</div><div class="detail-value">${task.location}</div></div>
-            </div>
-
-            <!-- Task Requester Section -->
-            <div class="section-divider"></div>
-            <div class="task-detail-section">
-                <h3 class="section-title"><i class="fas fa-user"></i> Task Requester</h3>
-                <div class="task-requester">
-                    <div class="requester-avatar">${task.requesterInitials || "NA"}</div>
-                    <div class="requester-info">
-                        <div class="requester-name">${task.requesterName || "Anonymous"}</div>
-                        <div class="requester-rating">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            <i class="fas fa-star-half-alt"></i>
-                            <span>${task.requesterRating || "0"}</span>
-                        </div>
-                        <div class="requester-meta">Member since ${task.requesterJoined || "N/A"}</div>
-                    </div>
-                    <button class="btn btn-secondary contact-button"><i class="fas fa-comment"></i> Contact</button>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="window.history.back()"><i class="fas fa-arrow-left"></i> Back</button>
-                <button class="btn btn-primary" onclick="acceptTask(${index})"><i class="fas fa-check"></i> Accept</button>
-                <button class="btn btn-secondary" onclick="deleteTask(${index})"><i class="fas fa-trash"></i> Delete</button>
-            </div>
-        </div>
-        `;
-        taskList.appendChild(card);
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/my-tasks`, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
     });
-}
 
-// Delete task function
-function deleteTask(index){
-    if(confirm("Are you sure you want to delete this task?")){
-        tasks.splice(index,1);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      console.error("Load error:", data);
+      alert("❌ Failed to load tasks");
+      return;
     }
+
+    const tasks = await res.json();
+    renderTasks(Array.isArray(tasks) ? tasks : []);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error while loading tasks");
+  }
 }
 
-// Accept task function (with alert)
-function acceptTask(index){
-    alert("✅ You have accepted: " + tasks[index].category);
+/* ========== RENDER TASK CARDS ========== */
+function renderTasks(tasks) {
+  taskList.innerHTML = "";
+
+  if (tasks.length === 0) {
+    taskList.innerHTML = "<p>No tasks found!</p>";
+    return;
+  }
+
+  tasks.forEach((task, index) => {
+    const card = document.createElement("div");
+    card.classList.add("task-detail-card");
+
+    const title = task.title || `Task #${task.task_id}`;
+    const urgency = task.urgency || "pending";
+    const status = task.status || "open";
+    const reward = task.reward_amount ? `₹${task.reward_amount}` : "Not set";
+    const created = formatDateTime(task.created_at);
+
+    // Google Maps by address (location)
+    const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(task.location || "")}&output=embed`;
+
+    card.innerHTML = `
+      <div class="task-detail-header">
+        <h1 class="task-detail-title">${title}</h1>
+        <div class="task-status">${status.toUpperCase()}</div>
+      </div>
+      <div class="task-detail-content">
+        <div class="task-detail-section">
+          <h3 class="section-title">
+            <i class="fas fa-info-circle"></i> Task Details
+          </h3>
+          <div class="detail-row">
+            <div class="detail-label">Urgency</div>
+            <div class="detail-value">${urgency}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Reward</div>
+            <div class="detail-value">${reward}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Created At</div>
+            <div class="detail-value">${created}</div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="task-detail-section">
+          <h3 class="section-title">
+            <i class="fas fa-align-left"></i> Description
+          </h3>
+          <div class="task-description">
+            ${task.description || "No description provided."}
+          </div>
+        </div>
+
+        <div class="task-detail-section">
+          <h3 class="section-title">
+            <i class="fas fa-map-marker-alt"></i> Location
+          </h3>
+          <div class="map-container">
+            <iframe
+              src="${mapSrc}"
+              style="border:0;width:100%;height:100%;"
+              allowfullscreen
+              loading="lazy">
+            </iframe>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Address</div>
+            <div class="detail-value">${task.location || "Not set"}</div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-secondary" onclick="window.history.back()">
+            <i class="fas fa-arrow-left"></i> Back
+          </button>
+          <button class="btn btn-primary" onclick="editTask(${task.task_id})">
+            <i class="fas fa-pen"></i> Edit
+          </button>
+          <button class="btn btn-secondary" onclick="deleteTask(${task.task_id})">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+    `;
+
+    taskList.appendChild(card);
+  });
 }
 
-renderTasks();
+/* ========== DELETE TASK (CUSTOMER) ========== */
+async function deleteTask(taskId) {
+  if (!confirm("❓ Are you sure you want to delete this task?")) return;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error("Delete error:", data);
+      alert("❌ Failed to delete task: " + (data.message || ""));
+      return;
+    }
+
+    alert("✅ Task deleted successfully");
+    loadTasks(); // list reload
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error while deleting task");
+  }
+}
+
+/* ========== EDIT TASK (REDIRECT TO d1.html) ========== */
+function editTask(taskId) {
+  // d1.html ko edit mode me open karo
+  window.location.href = `d1.html?task_id=${taskId}`;
+}
+
+/* ========== INIT ========== */
+loadTasks();
 </script>
+
 </body>
 </html>
 
