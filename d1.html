@@ -944,8 +944,8 @@
     <div class="task-form-container">
       <h2 class="form-title"><i class="fas fa-clipboard-list"></i> Task Details</h2>
 
-      <form id="task-form" onsubmit="handleamr(event)" method="post" action="/addtask" enctype="multipart/form-data">
-        <div class="form-grid">
+      <form id="task-form" onsubmit="handleamr(event)">
+
 
           <div class="input-group">
             <label class="input-label required" id="amr1" for="task-category">Task Category</label>
@@ -1134,10 +1134,10 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
             <input type="time" id="task-time" name="task-time" class="input-field" required>
           </div>
 
-          <div class="input-group">
+        <!--  <div class="input-group">
             <label class="input-label required" for="task-contact">📱 Mobile No.</label>
             <input type="number" id="task-contact" name="task-contact" class="input-field" required>
-          </div>
+          </div>-->
 
           <div class="input-group full-width">
             <label class="input-label" for="task-photo">Add Photos (Optional)</label>
@@ -1325,6 +1325,7 @@ async function handleamr(event) {
 
 
 </html>
+
 
 
 
