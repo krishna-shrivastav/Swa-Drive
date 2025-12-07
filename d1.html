@@ -1225,9 +1225,10 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
 
 <script>
 /* ==================== CONFIG ==================== */
-  const BACKEND_URL = "https://swadrive-backend.onrender.com";
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
+let editingTaskId = null;
 
-/* ==================== GPS ==================== */
+/* ==================== GPS (same as before) ==================== */
 function getCurrentLocation() {
   const statusDiv = document.getElementById("location-status");
 
@@ -1261,11 +1262,24 @@ function getCurrentLocation() {
   );
 }
 
-/* ==================== TASK SUBMIT ==================== */
-async function handleamr(event) {
-  event.preventDefault();
+/* ==================== INIT: CHECK EDIT MODE ==================== */
+window.addEventListener("DOMContentLoaded", initTaskForm);
 
-  /* ✅ LOGIN CHECK */
+async function initTaskForm() {
+  const params = new URLSearchParams(window.location.search);
+  editingTaskId = params.get("task_id");
+
+  if (!editingTaskId) {
+    // create mode
+    return;
+  }
+
+  // Heading change
+  const titleEl = document.querySelector(".form-title");
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fas fa-clipboard-list"></i> Edit Task`;
+  }
+
   const token = localStorage.getItem("token");
   if (!token) {
     alert("❌ Please login first");
@@ -1273,7 +1287,46 @@ async function handleamr(event) {
     return;
   }
 
-  /* ✅ COLLECT ALL FORM DATA (MATCH BACKEND) */
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${editingTaskId}`, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const task = await res.json();
+
+    if (!res.ok) {
+      console.error(task);
+      alert("❌ Failed to load task for edit");
+      return;
+    }
+
+    // Backend me jo fields hai unko form me daalo
+    document.getElementById("task-description").value = task.description || "";
+    document.getElementById("task-location").value = task.location || "";
+    document.getElementById("task-urgency").value = task.urgency || "";
+
+    // NOTE:
+    // category / component / mechanic-problem DB me direct store nahi ho rahe,
+    // isliye ye auto-fill nahi ho sakte. User ko dubara select karna padega.
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error while loading task for edit");
+  }
+}
+
+/* ==================== FORM SUBMIT (CREATE + EDIT) ==================== */
+async function handleamr(event) {
+  event.preventDefault();
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "login.html";
+    return;
+  }
+
   const payload = {
     category: document.getElementById("task-category").value,
     component: document.getElementById("Components").value,
@@ -1281,18 +1334,23 @@ async function handleamr(event) {
     description: document.getElementById("task-description").value,
     location: document.getElementById("task-location").value,
     urgency: document.getElementById("task-urgency").value,
-    reward_amount: 0
+    reward_amount: 0   // abhi ke liye fixed 0, baad me UI se le sakte ho
   };
 
-  /* ✅ REQUIRED FIELDS CHECK */
-  if (!payload.category || !payload.urgency || !payload.location ) {
+  if (!payload.category || !payload.urgency || !payload.location) {
     alert("⚠️ Please fill all required fields");
     return;
   }
 
+  const url = editingTaskId
+    ? `${BACKEND_URL}/api/tasks/${editingTaskId}`
+    : `${BACKEND_URL}/api/tasks`;
+
+  const method = editingTaskId ? "PUT" : "POST";
+
   try {
-    const res = await fetch(`${BACKEND_URL}/api/tasks`, {
-      method: "POST",
+    const res = await fetch(url, {
+      method,
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
@@ -1300,17 +1358,16 @@ async function handleamr(event) {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
       console.error(data);
-      alert("❌ Task create failed: " + (data.message || ""));
+      alert("❌ Task " + (editingTaskId ? "update" : "create") + " failed: " + (data.message || ""));
       return;
     }
 
-    alert("✅ Task created successfully!");
+    alert("✅ Task " + (editingTaskId ? "updated" : "created") + " successfully!");
     window.location.href = "task_detail.html";
-
   } catch (err) {
     console.error(err);
     alert("❌ Server / Network error");
@@ -1325,6 +1382,7 @@ async function handleamr(event) {
 
 
 </html>
+
 
 
 
