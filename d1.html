@@ -1252,7 +1252,7 @@ function getCurrentLocation() {
         `${lat.toFixed(6)},${lng.toFixed(6)}`;
 
       statusDiv.className = "location-status location-success";
-      statusDiv.innerHTML = `✅ Location detected<br>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+      statusDiv.innerHTML = `✅ Location detected<br>${lat.toFixed(6)},${lng.toFixed(6)}`;
     },
     err => {
       statusDiv.className = "location-status location-error";
@@ -1382,6 +1382,7 @@ async function handleamr(event) {
 
 
 </html>
+
 
 
 
