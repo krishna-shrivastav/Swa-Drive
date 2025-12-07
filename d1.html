@@ -1285,7 +1285,7 @@ async function handleamr(event) {
   };
 
   /* ✅ REQUIRED FIELDS CHECK */
-  if (!payload.category || !payload.urgency || !payload.location || !payload.contact) {
+  if (!payload.category || !payload.urgency || !payload.location ) {
     alert("⚠️ Please fill all required fields");
     return;
   }
@@ -1325,6 +1325,7 @@ async function handleamr(event) {
 
 
 </html>
+
 
 
 
