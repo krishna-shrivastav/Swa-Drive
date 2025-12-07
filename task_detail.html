@@ -163,9 +163,10 @@ function renderTasks(tasks) {
     const created = formatDateTime(task.created_at);
 
     // Google Maps by address (location)
-   const mapSrc = task.location
-  ? `https://www.google.com/maps/@${task.location},16z`
+ const mapSrc = task.location
+  ? `https://www.google.com/maps?q=${task.location}&output=embed`
   : "";
+
 
     card.innerHTML = `
       <div class="task-detail-header">
@@ -285,6 +286,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
