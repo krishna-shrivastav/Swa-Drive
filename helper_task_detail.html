@@ -213,6 +213,10 @@ iframe{
         <button class="btn btn-primary" onclick="acceptTask()">
           <i class="fas fa-check"></i> Accept Task
         </button>
+        <button class="btn btn-primary" onclick="completeTask(TASK_ID)">
+  <i class="fas fa-check-circle"></i> Mark Completed
+</button>
+
       </div>
 
     </div>
@@ -246,7 +250,44 @@ async function loadTask(){
     map.src=`https://www.google.com/maps?q=${encodeURIComponent(t.location)}&output=embed`;
   }
 }
+  
+async function completeTask(taskId) {
+  if (!confirm("✅ Are you sure you completed this task?")) return;
 
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Login first");
+    location.href = "login.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/tasks/${taskId}/complete`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert("❌ " + data.message);
+      return;
+    }
+
+    alert("🎉 Task completed!");
+    location.href = "helper_my_tasks.html";
+
+  } catch (err) {
+    alert("❌ Network error");
+  }
+}
+
+  
 async function acceptTask(){
   if(!confirm("Accept this task?"))return;
   const res=await fetch(`${BACKEND_URL}/api/tasks/${taskId}/accept`,{
@@ -264,3 +305,4 @@ loadTask();
 
 </body>
 </html>
+
