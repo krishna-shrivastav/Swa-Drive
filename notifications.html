@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Notifications | SwaDrive</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{font-family:Poppins;background:#f7fafc}
+.container{max-width:800px;margin:30px auto}
+h2{margin-bottom:20px}
+.card{
+  background:#fff;padding:20px;border-radius:12px;
+  box-shadow:0 6px 16px rgba(0,0,0,.1);
+  margin-bottom:15px;cursor:pointer
+}
+.card.unread{border-left:5px solid #4776E6}
+.time{font-size:.8rem;color:#718096}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>🔔 Notifications</h2>
+<div id="list"></div>
+</div>
+
+<script>
+const BACKEND="https://swadrive-backend.onrender.com";
+const token=localStorage.getItem("token");
+if(!token) location.href="login.html";
+
+async function load(){
+ const r=await fetch(`${BACKEND}/api/notifications`,{
+  headers:{Authorization:"Bearer "+token}
+ });
+ const data=await r.json();
+ const list=document.getElementById("list");
+ list.innerHTML="";
+ data.forEach(n=>{
+  const d=document.createElement("div");
+  d.className="card "+(n.is_read? "" : "unread");
+  d.innerHTML=`
+    <b>${n.title}</b>
+    <p>${n.message}</p>
+    <div class="time">${new Date(n.created_at).toLocaleString()}</div>
+  `;
+  d.onclick=()=>markRead(n.notification_id,n.task_id);
+  list.appendChild(d);
+ });
+}
+
+async function markRead(id,taskId){
+ await fetch(`${BACKEND}/api/notifications/${id}/read`,{
+  method:"PUT",
+  headers:{Authorization:"Bearer "+token}
+ });
+ if(taskId)
+   window.location.href=`task_detail.html?task_id=${taskId}`;
+}
+
+load();
+</script>
+</body>
+</html>
