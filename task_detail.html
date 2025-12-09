@@ -168,8 +168,11 @@ function renderTasks(tasks) {
   ? `https://www.google.com/maps?q=${task.location}&output=embed`
   : "";
 // ✅ SHOW REVIEW ONLY IF TASK COMPLETED
-if (t.status === "completed") {
-  document.getElementById("review-section").style.display = "block";
+if (task.status === "completed") {
+  setTimeout(() => {
+    const review = document.getElementById("review-section");
+    if (review) review.style.display = "block";
+  }, 0);
 }
 
 
@@ -328,6 +331,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
