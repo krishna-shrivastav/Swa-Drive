@@ -24,6 +24,7 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
 .chat-input button{background:#4776E6;color:#fff;border:none;padding:0 18px;margin-left:10px;border-radius:30px;font-size:1.1rem;cursor:pointer}
 </style>
 </head>
+
 <body>
 
 <div class="chat-container">
@@ -36,63 +37,109 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
 
   <div class="chat-input">
     <input type="text" id="text" placeholder="Type message or phone number..." />
-    <button onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+    <button onclick="sendMsg()">
+      <i class="fas fa-paper-plane"></i>
+    </button>
   </div>
 </div>
 
 <script>
-const BACKEND_URL="https://swadrive-backend.onrender.com";
-const token=localStorage.getItem("token");
-const taskId=new URLSearchParams(window.location.search).get("task_id");
-const messages=document.getElementById("messages");
-const input=document.getElementById("text");
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
+const token = localStorage.getItem("token");
+const taskId = new URLSearchParams(window.location.search).get("task_id");
 
-if(!token || !taskId){
+const messagesBox = document.getElementById("messages");
+const input = document.getElementById("text");
+
+let chatId = null;
+
+if (!token || !taskId) {
   alert("Login first");
-  location.href="login.html";
+  location.href = "login.html";
 }
 
-// ---------------- LOAD CHAT ----------------
-async function loadChat(){
-  const res=await fetch(`${BACKEND_URL}/api/chat/${taskId}`,{
-    headers:{Authorization:"Bearer "+token}
-  });
-
-  if(!res.ok) return;
-
-  const data=await res.json();
-  messages.innerHTML="";
-
-  data.forEach(m=>{
-    const div=document.createElement("div");
-    div.className="msg "+(m.is_me?"me":"other");
-    div.innerHTML=`${m.message}<small>${new Date(m.created_at).toLocaleTimeString()}</small>`;
-    messages.appendChild(div);
-  });
-
-  messages.scrollTop=messages.scrollHeight;
-}
-
-// ---------------- SEND MSG ----------------
-async function sendMsg(){
-  const text=input.value.trim();
-  if(!text) return;
-
-  await fetch(`${BACKEND_URL}/api/chat/${taskId}`,{
-    method:"POST",
-    headers:{
-      Authorization:"Bearer "+token,
-      "Content-Type":"application/json"
+/* ================= START CHAT ================= */
+async function startChat() {
+  const res = await fetch(`${BACKEND_URL}/api/chats/start`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
     },
-    body:JSON.stringify({message:text})
+    body: JSON.stringify({ task_id: taskId })
   });
 
-  input.value="";
-  loadChat();
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.message || "Failed to start chat");
+    return;
+  }
+
+  chatId = data.chat_id;
+  loadMessages();
+
+  // auto refresh
+  setInterval(loadMessages, 3000);
 }
 
-loadChat();
-setInterval(loadChat,3000);
+/* ================= LOAD MESSAGES ================= */
+async function loadMessages() {
+  if (!chatId) return;
+
+  const res = await fetch(
+    `${BACKEND_URL}/api/chats/${chatId}/messages`,
+    {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    }
+  );
+
+  const msgs = await res.json();
+  messagesBox.innerHTML = "";
+
+  msgs.forEach(m => {
+    const div = document.createElement("div");
+    div.className =
+      m.sender_id === JSON.parse(atob(token.split(".")[1])).user_id
+        ? "msg me"
+        : "msg other";
+
+    div.innerHTML = `
+      ${m.message_text}
+      <small>${new Date(m.created_at).toLocaleTimeString()}</small>
+    `;
+
+    messagesBox.appendChild(div);
+  });
+
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+/* ================= SEND MESSAGE ================= */
+async function sendMsg() {
+  const text = input.value.trim();
+  if (!text || !chatId) return;
+
+  await fetch(
+    `${BACKEND_URL}/api/chats/${chatId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
+    }
+  );
+
+  input.value = "";
+  loadMessages();
+}
+
+/* ================= INIT ================= */
+startChat();
 </script>
 
 </body>
