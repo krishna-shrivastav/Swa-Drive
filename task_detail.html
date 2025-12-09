@@ -280,6 +280,10 @@ function renderTasks(tasks) {
           <button class="btn btn-secondary" onclick="window.history.back()">
             <i class="fas fa-arrow-left"></i> Back
           </button>
+          <button class="btn btn-primary" onclick="openChat(${task.task_id})">
+  <i class="fas fa-comments"></i> Chat with Helper
+</button>
+
 
           ${status !== 'completed' ? `
             <button class="btn btn-primary" onclick="editTask(${task.task_id})">
@@ -380,6 +384,10 @@ async function deleteTask(taskId) {
   }
 }
 
+    function openChat(taskId) {
+  window.location.href = `chat.html?task_id=${taskId}`;
+}
+
 /* ========== EDIT TASK (REDIRECT TO d1.html) ========== */
 function editTask(taskId) {
   window.location.href = `d1.html?task_id=${taskId}`;
@@ -441,6 +449,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
