@@ -283,6 +283,52 @@ if (task.status === "completed") {
     taskList.appendChild(card);
   });
 }
+
+document.addEventListener("submit", async function (e) {
+  if (!e.target || e.target.id !== "review-form") return;
+
+  e.preventDefault();
+
+  const rating = document.getElementById("rating").value;
+  const comment = document.getElementById("comment").value;
+  const token = localStorage.getItem("token");
+
+  // ⚠️ task_id correct set
+  const taskId = document.querySelector(".task-detail-card")
+    ?.querySelector(".btn-primary")
+    ?.getAttribute("onclick")
+    ?.match(/\d+/)?.[0];
+
+  if (!taskId) {
+    alert("Task ID not found");
+    return;
+  }
+
+  const res = await fetch(
+    `${BACKEND_URL}/api/tasks/${taskId}/review`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ rating, comment })
+    }
+  );
+
+  if (!res.ok) {
+    alert("❌ Review failed");
+    return;
+  }
+
+  alert("✅ Review submitted");
+
+  // ✅ REMOVE task card from page
+  document.querySelector(".task-detail-card").remove();
+});
+
+
+
     
 /* ========== DELETE TASK (CUSTOMER) ========== */
 async function deleteTask(taskId) {
@@ -331,6 +377,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
