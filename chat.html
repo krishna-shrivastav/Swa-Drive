@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SwaDrive | Task Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
+.chat-container{max-width:900px;margin:0 auto;height:100vh;display:flex;flex-direction:column}
+.chat-header{background:#4776E6;color:#fff;padding:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.chat-header i{cursor:pointer}
+.chat-messages{flex:1;overflow-y:auto;padding:15px;background:#eef1f5}
+.msg{max-width:70%;padding:10px 14px;border-radius:14px;margin-bottom:10px;font-size:.9rem}
+.msg.me{background:#4776E6;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.msg.other{background:#fff;color:#222;border-bottom-left-radius:4px}
+.msg small{display:block;font-size:.7rem;opacity:.6;margin-top:4px}
+
+.chat-input{display:flex;padding:12px;background:#fff;border-top:1px solid #ddd}
+.chat-input input{flex:1;padding:10px;border-radius:30px;border:1px solid #ccc;outline:none}
+.chat-input button{background:#4776E6;color:#fff;border:none;padding:0 18px;margin-left:10px;border-radius:30px;font-size:1.1rem;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <i class="fas fa-arrow-left" onclick="history.back()"></i>
+    Task Chat
+  </div>
+
+  <div class="chat-messages" id="messages"></div>
+
+  <div class="chat-input">
+    <input type="text" id="text" placeholder="Type message or phone number..." />
+    <button onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<script>
+const BACKEND_URL="https://swadrive-backend.onrender.com";
+const token=localStorage.getItem("token");
+const taskId=new URLSearchParams(window.location.search).get("task_id");
+const messages=document.getElementById("messages");
+const input=document.getElementById("text");
+
+if(!token || !taskId){
+  alert("Login first");
+  location.href="login.html";
+}
+
+// ---------------- LOAD CHAT ----------------
+async function loadChat(){
+  const res=await fetch(`${BACKEND_URL}/api/chat/${taskId}`,{
+    headers:{Authorization:"Bearer "+token}
+  });
+
+  if(!res.ok) return;
+
+  const data=await res.json();
+  messages.innerHTML="";
+
+  data.forEach(m=>{
+    const div=document.createElement("div");
+    div.className="msg "+(m.is_me?"me":"other");
+    div.innerHTML=`${m.message}<small>${new Date(m.created_at).toLocaleTimeString()}</small>`;
+    messages.appendChild(div);
+  });
+
+  messages.scrollTop=messages.scrollHeight;
+}
+
+// ---------------- SEND MSG ----------------
+async function sendMsg(){
+  const text=input.value.trim();
+  if(!text) return;
+
+  await fetch(`${BACKEND_URL}/api/chat/${taskId}`,{
+    method:"POST",
+    headers:{
+      Authorization:"Bearer "+token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({message:text})
+  });
+
+  input.value="";
+  loadChat();
+}
+
+loadChat();
+setInterval(loadChat,3000);
+</script>
+
+</body>
+</html>
