@@ -213,6 +213,9 @@ iframe{
         <button class="btn btn-primary" onclick="acceptTask()">
           <i class="fas fa-check"></i> Accept Task
         </button>
+          <button class="btn btn-primary" onclick="openChat()">
+    <i class="fas fa-comments"></i> Chat with Customer
+  </button>
        <button class="btn btn-primary" onclick="completeTask(taskId)">
   <i class="fas fa-check-circle"></i> Mark Completed
 </button>
@@ -303,9 +306,22 @@ loadTask();
   }
 }
 
+
+  // ---------------- OPEN CHAT ----------------
+function openChat() {
+  if (!taskId) {
+    alert("Task id missing");
+    return;
+  }
+
+  // chat.html page par le jaayega
+  window.location.href = `chat.html?task_id=${taskId}`;
+}
+
 </script>
 
 </body>
 </html>
+
 
 
