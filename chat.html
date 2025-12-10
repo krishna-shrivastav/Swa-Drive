@@ -52,13 +52,9 @@ const messagesBox = document.getElementById("messages");
 const input = document.getElementById("text");
 
 let chatId = null;
+let myUserId = JSON.parse(atob(token.split(".")[1])).user_id;
 
-if (!token || !taskId) {
-  alert("Login first");
-  location.href = "login.html";
-}
-
-/* ================= START CHAT ================= */
+// ✅ START CHAT
 async function startChat() {
   const res = await fetch(`${BACKEND_URL}/api/chats/start`, {
     method: "POST",
@@ -70,44 +66,38 @@ async function startChat() {
   });
 
   const data = await res.json();
-
   if (!res.ok) {
-    alert(data.message || "Failed to start chat");
+    alert(data.message || "Chat start failed");
     return;
   }
 
   chatId = data.chat_id;
   loadMessages();
-
-  // auto refresh
-  setInterval(loadMessages, 3000);
 }
 
-/* ================= LOAD MESSAGES ================= */
+// ✅ LOAD MESSAGES
 async function loadMessages() {
   if (!chatId) return;
 
   const res = await fetch(
     `${BACKEND_URL}/api/chats/${chatId}/messages`,
     {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+      headers: { Authorization: "Bearer " + token }
     }
   );
 
-  const msgs = await res.json();
+  const messages = await res.json();
   messagesBox.innerHTML = "";
 
-  msgs.forEach(m => {
+  messages.forEach(m => {
     const div = document.createElement("div");
-    div.className =
-      m.sender_id === JSON.parse(atob(token.split(".")[1])).user_id
-        ? "msg me"
-        : "msg other";
 
+    const isMe = m.sender_id === myUserId;
+    div.className = "msg " + (isMe ? "me" : "other");
+
+    // ✅✅✅ REAL FIX HERE
     div.innerHTML = `
-      ${m.message_text}
+      ${m.message}
       <small>${new Date(m.created_at).toLocaleTimeString()}</small>
     `;
 
@@ -117,30 +107,31 @@ async function loadMessages() {
   messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
-/* ================= SEND MESSAGE ================= */
+// ✅ SEND MESSAGE
 async function sendMsg() {
   const text = input.value.trim();
   if (!text || !chatId) return;
 
-  await fetch(
-    `${BACKEND_URL}/api/chats/${chatId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: text })
-    }
-  );
+  await fetch(`${BACKEND_URL}/api/chats/${chatId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: text })
+  });
 
   input.value = "";
-  loadMessages();
 }
 
-/* ================= INIT ================= */
+// ✅ AUTO REFRESH (temporary – socket later)
+setInterval(loadMessages, 2000);
+
+// INIT
 startChat();
 </script>
 
+
 </body>
 </html>
+
