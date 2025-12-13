@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8">    
 <title>SwaDrive | Task Chat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -133,12 +133,38 @@ async function loadMessages() {
       }
     }
 
-    div.innerHTML = `
-      ${m.message}
-      <span class="time">
-        ${new Date(m.created_at).toLocaleTimeString()} ${tick}
-      </span>
-    `;
+
+// Mark delivered
+fetch(`${BACKEND_URL}/api/chat/messages/mark-delivered`, {
+  method: "POST",
+  headers: { "Authorization": "Bearer " + token }
+});
+
+// Mark seen
+fetch(`${BACKEND_URL}/api/chat/messages/mark-seen`, {
+  method: "POST",
+  headers: { "Authorization": "Bearer " + token }
+});
+
+
+      
+  let ticks = "";
+
+if (m.sender_id === myUserId) {
+    // My message
+    if (m.seen == 1) {
+        ticks = `<span class="tick seen">✔✔</span>`;
+    } else if (m.delivered == 1) {
+        ticks = `<span class="tick">✔✔</span>`;
+    } else {
+        ticks = `<span class="tick">✔</span>`;
+    }
+}
+
+div.innerHTML = `
+  ${m.message}
+  <small>${new Date(m.created_at).toLocaleTimeString()} ${ticks}</small>
+`;
 
     messagesBox.appendChild(div);
   });
@@ -189,3 +215,4 @@ startChat();
 
 </body>
 </html>
+
