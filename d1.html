@@ -39,7 +39,6 @@
       color: var(--text-dark);
       line-height: 1.6;
     }
-
     h1,
     h2,
     h3,
@@ -1224,142 +1223,157 @@ Example for Tire: 'Front tire is completely flat, happened near highway'"></text
   </div>
 
 <script>
-/* ================= CONFIG ================= */
-const BACKEND_URL = "https://swadrive-backend.onrender.com";
-const token = localStorage.getItem("token");
+/* ==================== CONFIG ==================== */
+const BACKEND_URL = "https://swadrive-backend-2bou.onrender.com";
+let editingTaskId = null;
 
-/* ================= AUTH GUARD ================= */
-if (!token) {
-  alert("❌ Please login first");
-  window.location.href = "index.html";
-}
-
-/* ================= CATEGORY QUICK SELECT ================= */
-function selectCategory(cat) {
-  const select = document.getElementById("task-category");
-  if (!select) return;
-  select.value = cat.toLowerCase().includes("fuel") ? "fuels" : cat.toLowerCase();
-  toggleFuelSection();
-}
-
-/* ================= TOGGLE FUEL SECTION ================= */
-function toggleFuelSection() {
-  const category = document.getElementById("task-category").value;
-  const fuelSection = document.getElementById("fuel-cart-section");
-
-  if (!fuelSection) return;
-
-  if (category.includes("fuel")) {
-    fuelSection.style.display = "block";
-  } else {
-    fuelSection.style.display = "none";
-  }
-}
-
-/* ================= SAVE AS DRAFT ================= */
-function redirectToLearn() {
-  alert("💾 Draft saved locally");
-}
-
-/* ================= GPS ================= */
+/* ==================== GPS (same as before) ==================== */
 function getCurrentLocation() {
   const statusDiv = document.getElementById("location-status");
+
   statusDiv.className = "location-status location-loading";
-  statusDiv.textContent = "📍 Getting location...";
+  statusDiv.textContent = "📍 Getting your location...";
   statusDiv.classList.remove("hidden");
+
+  if (!navigator.geolocation) {
+    alert("❌ GPS not supported");
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(
     pos => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+
       document.getElementById("latitude").value = lat;
       document.getElementById("longitude").value = lng;
-      document.getElementById("task-location").value = `${lat}, ${lng}`;
+      document.getElementById("task-location").value =
+        `${lat.toFixed(6)},${lng.toFixed(6)}`;
+
       statusDiv.className = "location-status location-success";
-      statusDiv.textContent = "✅ Location detected";
+      statusDiv.innerHTML = `✅ Location detected<br>${lat.toFixed(6)},${lng.toFixed(6)}`;
     },
-    () => {
+    err => {
       statusDiv.className = "location-status location-error";
-      statusDiv.textContent = "❌ Permission denied";
-    }
+      statusDiv.textContent = "❌ Location permission denied";
+    },
+    { enableHighAccuracy: true }
   );
 }
 
-/* ================= FUEL CART (SAFE MINIMAL) ================= */
-const fuelCart = {};
+/* ==================== INIT: CHECK EDIT MODE ==================== */
+window.addEventListener("DOMContentLoaded", initTaskForm);
 
-function updateQuantity(id, delta) {
-  fuelCart[id] = Math.max(0, (fuelCart[id] || 0) + delta);
-  document.getElementById(`qty-${id}`).innerText = fuelCart[id];
-  updateCartSummary();
-}
+async function initTaskForm() {
+  const params = new URLSearchParams(window.location.search);
+  editingTaskId = params.get("task_id");
 
-function selectFuelType(container, type, price) {
-  fuelCart[container + "_type"] = type;
-  fuelCart[container + "_price"] = price;
-  document.getElementById(`fuel-info-${container}`).innerText = `${type} selected`;
-  updateCartSummary();
-}
-
-function selectMobilType(container, brand, price) {
-  fuelCart[container + "_brand"] = brand;
-  fuelCart[container + "_price"] = price;
-  updateCartSummary();
-}
-
-function updateCartSummary() {
-  const cart = document.getElementById("cart-items-compact");
-  const summary = document.getElementById("cart-summary-compact");
-  const totalEl = document.getElementById("cart-total");
-
-  cart.innerHTML = "";
-  let total = 0;
-
-  for (let k in fuelCart) {
-    if (k.endsWith("_price")) total += fuelCart[k];
-  }
-
-  if (total > 0) {
-    summary.style.display = "block";
-    totalEl.innerText = "Total: ₹" + total;
-  } else {
-    summary.style.display = "none";
-  }
-}
-
-/* ================= SUBMIT TASK ================= */
-async function handleamr(e) {
-  e.preventDefault();
-
-  const user = await requireAuth();
-
-  const { error } = await supabase
-    .from("tasks")
-    .insert({
-      user_id: user.id,
-      title: "Service Request",
-      description: document.getElementById("task-description").value,
-      location: document.getElementById("task-location").value,
-      urgency: document.getElementById("task-urgency").value,
-      reward_amount: 0
-    });
-
-  if (error) {
-    alert(error.message);
+  if (!editingTaskId) {
+    // create mode
     return;
   }
 
-  alert("Task created ✅");
-  window.location.href = "task_detail.html";
+  // Heading change
+  const titleEl = document.querySelector(".form-title");
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fas fa-clipboard-list"></i> Edit Task`;
+  }
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${editingTaskId}`, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const task = await res.json();
+
+    if (!res.ok) {
+      console.error(task);
+      alert("❌ Failed to load task for edit");
+      return;
+    }
+
+    // Backend me jo fields hai unko form me daalo
+    document.getElementById("task-description").value = task.description || "";
+    document.getElementById("task-location").value = task.location || "";
+    document.getElementById("task-urgency").value = task.urgency || "";
+
+    // NOTE:
+    // category / component / mechanic-problem DB me direct store nahi ho rahe,
+    // isliye ye auto-fill nahi ho sakte. User ko dubara select karna padega.
   } catch (err) {
     console.error(err);
-    alert("❌ Server error");
+    alert("❌ Server / Network error while loading task for edit");
+  }
+}
+
+/* ==================== FORM SUBMIT (CREATE + EDIT) ==================== */
+async function handleamr(event) {
+  event.preventDefault();
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("❌ Please login first");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const payload = {
+    category: document.getElementById("task-category").value,
+    component: document.getElementById("Components").value,
+    mechanicProblem: document.getElementById("mechanic-problem").value,
+    description: document.getElementById("task-description").value,
+    location: document.getElementById("task-location").value,
+    urgency: document.getElementById("task-urgency").value,
+    reward_amount: 0   // abhi ke liye fixed 0, baad me UI se le sakte ho
+  };
+
+  if (!payload.category || !payload.urgency || !payload.location) {
+    alert("⚠️ Please fill all required fields");
+    return;
+  }
+
+  const url = editingTaskId
+    ? `${BACKEND_URL}/api/tasks/${editingTaskId}`
+    : `${BACKEND_URL}/api/tasks`;
+
+  const method = editingTaskId ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error(data);
+      alert("❌ Task " + (editingTaskId ? "update" : "create") + " failed: " + (data.message || ""));
+      return;
+    }
+
+    alert("✅ Task " + (editingTaskId ? "updated" : "created") + " successfully!");
+    window.location.href = "task_detail.html";
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error");
   }
 }
 </script>
 
-
-<script src="supabase.js"></script>
 
 
 
@@ -1367,19 +1381,3 @@ async function handleamr(e) {
 
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
