@@ -98,6 +98,17 @@ const BACKEND_URL = "https://swadrive-backend.onrender.com";
 const taskList = document.getElementById("task-list");
 const token = localStorage.getItem("token");
 
+const user = await requireAuth();
+
+const { data: tasks } = await supabase
+  .from("tasks")
+  .select("*")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
+
+
+
+ 
 /* ================= AUTH GUARD ================= */
 if (!token) {
   alert("❌ Please login first");
@@ -259,6 +270,8 @@ async function submitReview(e,id){
 /* ================= INIT ================= */
 loadTasks();
 </script>
+<script src="supabase.js"></script>
 
 </body>
 </html>
+
