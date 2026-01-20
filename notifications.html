@@ -136,10 +136,17 @@ async function markRead(id, taskId) {
     alert("❌ Failed to mark notification as read");
   }
 }
+await supabase.from("notifications").insert({
+  user_id,
+  title: "Task Update",
+  message: "Your task was accepted"
+});
 
 /* ================= INIT ================= */
 loadNotifications();
 </script>
+<script src="supabase.js"></script>
 
 </body>
 </html>
+
