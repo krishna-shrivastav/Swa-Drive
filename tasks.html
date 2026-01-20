@@ -270,10 +270,23 @@ async function acceptTask(id){
     alert("❌ Network error");
   }
 }
+const { data: tasks } = await supabase
+  .from("tasks")
+  .select("*")
+  .eq("status", "open");
 
+await supabase
+  .from("tasks")
+  .update({ status: "assigned" })
+  .eq("id", taskId);
+
+
+  
 /* ================= INIT ================= */
 loadOpenTasks();
 </script>
+<script src="supabase.js"></script>
 
 </body>
 </html>
+
