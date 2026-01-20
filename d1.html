@@ -1331,35 +1331,26 @@ function updateCartSummary() {
 async function handleamr(e) {
   e.preventDefault();
 
-  const payload = {
-    category: document.getElementById("task-category").value,
-    component: document.getElementById("Components").value,
-    mechanicProblem: document.getElementById("mechanic-problem").value,
-    description: document.getElementById("task-description").value,
-    location: document.getElementById("task-location").value,
-    urgency: document.getElementById("task-urgency").value,
-    reward_amount: 0
-  };
+  const user = await requireAuth();
 
-  if (!payload.category || !payload.urgency || !payload.location) {
-    alert("⚠️ Required fields missing");
+  const { error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: user.id,
+      title: "Service Request",
+      description: document.getElementById("task-description").value,
+      location: document.getElementById("task-location").value,
+      urgency: document.getElementById("task-urgency").value,
+      reward_amount: 0
+    });
+
+  if (error) {
+    alert(error.message);
     return;
   }
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/tasks`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) throw new Error("Create failed");
-
-    alert("✅ Task created successfully");
-    window.location.href = "task_detail.html";
+  alert("Task created ✅");
+  window.location.href = "task_detail.html";
   } catch (err) {
     console.error(err);
     alert("❌ Server error");
@@ -1376,6 +1367,7 @@ async function handleamr(e) {
 
 
 </html>
+
 
 
 
