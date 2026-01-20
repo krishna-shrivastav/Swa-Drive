@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SwaDrive - Available Tasks (Helper)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet">
+<meta charset="UTF-8">
+<title>SwaDrive - Available Tasks (Helper)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     /* --- tumhara same CSS, sirf chhota typo fix --- */
     :root {
@@ -116,267 +114,166 @@
     }
   </style>
 </head>
+
 <body>
-  <nav class="navbar">
-    <a href="#" class="logo">
-      <i class="fas fa-route logo-icon"></i>
-      Swa<span>Drive</span>
+
+<nav class="navbar">
+  <a href="Home.html" class="logo">
+    <i class="fas fa-route logo-icon"></i> Swa<span>Drive</span>
+  </a>
+  <div class="nav-links">
+    <a href="Home.html" class="nav-link">Home</a>
+    <a href="helper_my_tasks.html" class="nav-link">My Tasks</a>
+    <a href="d1.html" class="nav-link">List a Need</a>
+    <a href="Home.html" class="nav-link">How It Works</a>
+    <a href="tasks.html" class="nav-link active highlight">
+      <i class="fas fa-clipboard-list"></i> Find Tasks
     </a>
-    <div class="nav-links">
-      <a href="Home.html" class="nav-link">Home</a>
-      <a href="helper_my_tasks.html" class="nav-link">My Tasks</a>
-      <a href="d1.html" class="nav-link">List a Need</a>
-      <a href="Home.html" class="nav-link">How It Works</a>
-      <a href="tasks.html" class="nav-link active highlight"><i class="fas fa-clipboard-list"></i> Find Tasks</a>
-    </div>
-    <div class="user-menu">
-      <div class="user-avatar">KS</div>
-      <i class="fas fa-chevron-down" style="font-size: 0.7rem; color: var(--text-light);"></i>
-    </div>
-    <div class="mobile-menu-btn">
-      <i class="fas fa-bars"></i>
-    </div>
-  </nav>
+  </div>
+</nav>
 
-  <div class="container">
-    <div class="page-title">
-      <h1>Find Tasks To Help With</h1>
-      <p>Browse tasks from customers near you and accept the ones you want to complete.</p>
-    </div>
-
-    <div class="search-filters">
-      <div class="filter-grid">
-        <div class="filter-group">
-          <label class="filter-label" for="search">Search Tasks</label>
-          <input type="text" id="search" class="search-input" placeholder="Keywords, items, etc.">
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label" for="category">Category</label>
-          <select id="category" class="filter-select">
-            <option value="all">All Categories</option>
-            <option value="fuels">Fuels</option>
-            <option value="components">Vehicles Components</option>
-            <option value="mechanic">Vehicles Repair Mechanic</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label" for="urgency">Urgency</label>
-          <select id="urgency" class="filter-select">
-            <option value="all">All Urgency Levels</option>
-            <option value="emergency">Emergency</option>
-            <option value="immediate">Immediate</option>
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="week">This Week</option>
-            <option value="flexible">Flexible</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="filter-buttons">
-        <button id="reset-filters" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset Filters</button>
-        <button id="apply-filters" class="btn btn-primary"><i class="fas fa-search"></i> Apply Filters</button>
-      </div>
-    </div>
-
-    <div class="category-tags">
-      <div class="category-tag active"><i class="fas fa-border-all"></i> All</div>
-      <div class="category-tag"><i class="fas fa-oil-can"></i> Fuels</div>
-      <div class="category-tag"><i class="fas fa-car"></i> Vehicles Components</div>
-      <div class="category-tag"><i class="fas fa-tools"></i> Vehicles Repair Mechanic</div>
-    </div>
-
-    <h2 class="section-title">
-      <i class="fas fa-clipboard-list"></i>
-      Available Tasks
-      <span id="task-count" style="font-size:0.9rem;color:var(--text-light);margin-left:6px;"></span>
-    </h2>
-
-    <div id="tasks-container" class="task-grid"></div>
-
-    <div id="no-tasks" class="no-tasks" style="display:none;">
-      <i class="fas fa-search"></i>
-      <h3>No Tasks Found</h3>
-      <p>No open tasks are available right now. Please check again later.</p>
-    </div>
+<div class="container">
+  <div class="page-title">
+    <h1>Find Tasks To Help With</h1>
+    <p>Browse tasks from customers near you.</p>
   </div>
 
-  <script>
-    const BACKEND_URL = "https://swadrive-backend.onrender.com";
+  <div id="tasks-container" class="task-grid"></div>
 
-    const tasksContainer = document.getElementById("tasks-container");
-    const noTasksBox = document.getElementById("no-tasks");
-    const taskCountSpan = document.getElementById("task-count");
+  <div id="no-tasks" class="no-tasks" style="display:none;">
+    <i class="fas fa-search"></i>
+    <h3>No Tasks Found</h3>
+    <p>No open tasks available.</p>
+  </div>
+</div>
 
-    let allTasks = [];
+<script>
+/* ================= CONFIG ================= */
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
+const token = localStorage.getItem("token");
 
-    function urgencyClass(urgency) {
-      switch ((urgency || "").toLowerCase()) {
-        case "emergency":
-        case "immediate": return "urgency-immediate";
-        case "today": return "urgency-today";
-        case "tomorrow": return "urgency-tomorrow";
-        case "week": return "urgency-week";
-        case "flexible": return "urgency-flexible";
-        default: return "";
-      }
-    }
+const tasksContainer = document.getElementById("tasks-container");
+const noTasksBox = document.getElementById("no-tasks");
 
-    async function loadOpenTasks() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("❌ Please login as Helper first");
-        window.location.href = "login.html";
-        return;
-      }
+let allTasks = [];
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/open-tasks`, {
-          headers: {
-            "Authorization": "Bearer " + token
-          }
-        });
+/* ================= AUTH GUARD ================= */
+if (!token) {
+  alert("❌ Please login as Helper first");
+  window.location.href = "login.html";
+}
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          console.error("Open tasks error:", data);
-          alert(data.message || "❌ Failed to load open tasks (maybe you are not helper?)");
-          return;
-        }
+/* ================= HELPERS ================= */
+function urgencyClass(u){
+  switch((u||"").toLowerCase()){
+    case "emergency":
+    case "immediate": return "urgency-immediate";
+    case "today": return "urgency-today";
+    case "tomorrow": return "urgency-tomorrow";
+    case "week": return "urgency-week";
+    case "flexible": return "urgency-flexible";
+    default: return "";
+  }
+}
 
-        const tasks = await res.json();
-        allTasks = Array.isArray(tasks) ? tasks : [];
-        renderTasks(allTasks);
-      } catch (err) {
-        console.error(err);
-        alert("❌ Server / Network error while loading tasks");
-      }
-    }
-
-    function renderTasks(tasks) {
-      tasksContainer.innerHTML = "";
-
-      if (!tasks || tasks.length === 0) {
-        taskCountSpan.textContent = "(0)";
-        noTasksBox.style.display = "block";
-        return;
-      }
-
-      noTasksBox.style.display = "none";
-      taskCountSpan.textContent = `(${tasks.length})`;
-
-      tasks.forEach(task => {
-        const card = document.createElement("div");
-        card.className = "task-card";
-
-        const title = task.title || `Task #${task.task_id}`;
-        const urgency = task.urgency || "flexible";
-        const status = (task.status || "open").toUpperCase();
-        const reward = task.reward_amount ? `₹${task.reward_amount}` : "No reward";
-        const location = task.location || "Not specified";
-        const desc = task.description || "No description provided";
-
-        card.innerHTML = `
-          <div class="task-header">
-            <h3 class="task-title">${title}</h3>
-            <div class="task-urgency ${urgencyClass(urgency)}">${urgency}</div>
-          </div>
-          <p><strong>Status:</strong> ${status}</p>
-          <p><strong>Reward:</strong> ${reward}</p>
-          <p><strong>Location:</strong> ${location}</p>
-          <p><strong>Description:</strong> ${desc}</p>
-          <div class="task-actions">
-            <button class="btn btn-secondary" onclick="viewTask(${task.task_id})">
-              <i class="fas fa-eye"></i> View Details
-            </button>
-            <button class="btn btn-primary" onclick="acceptTask(${task.task_id})">
-              <i class="fas fa-check"></i> Accept Task
-            </button>
-          </div>
-        `;
-
-        tasksContainer.appendChild(card);
-      });
-    }
-
-    async function acceptTask(taskId) {
-      if (!confirm("✅ Are you sure you want to accept this task?")) return;
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("❌ Please login as Helper first");
-        window.location.href = "login.html";
-        return;
-      }
-
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/accept`, {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + token
-          }
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          console.error("Accept error:", data);
-          alert("❌ Failed to accept task: " + (data.message || ""));
-          return;
-        }
-
-        alert("🎉 Task accepted successfully!");
-        loadOpenTasks();
-      } catch (err) {
-        console.error(err);
-        alert("❌ Server / Network error while accepting task");
-      }
-    }
-
-    function viewTask(taskId) {
-      // future: helper specific detail page
-     window.location.href = `helper_task_detail.html?task_id=${taskId}`;
-
-    }
-
-    // simple client-side filter (only search + urgency for now)
-    document.getElementById("apply-filters").addEventListener("click", () => {
-      const q = document.getElementById("search").value.toLowerCase();
-      const urg = document.getElementById("urgency").value;
-
-      const filtered = allTasks.filter(t => {
-        const text = (t.title || "") + " " + (t.description || "") + " " + (t.location || "");
-        const matchSearch = !q || text.toLowerCase().includes(q);
-        const matchUrg = urg === "all" || (t.urgency || "").toLowerCase() === urg.toLowerCase();
-        return matchSearch && matchUrg;
-      });
-
-      renderTasks(filtered);
+/* ================= LOAD TASKS ================= */
+async function loadOpenTasks(){
+  try{
+    const res = await fetch(`${BACKEND_URL}/api/open-tasks`,{
+      headers:{ Authorization:"Bearer "+token }
     });
 
-    document.getElementById("reset-filters").addEventListener("click", () => {
-      document.getElementById("search").value = "";
-      document.getElementById("urgency").value = "all";
-      renderTasks(allTasks);
+    const data = await res.json().catch(()=>[]);
+
+    if(!res.ok){
+      alert(data.message || "❌ Failed to load tasks");
+      return;
+    }
+
+    allTasks = Array.isArray(data) ? data : [];
+    renderTasks(allTasks);
+  }catch(err){
+    console.error(err);
+    alert("❌ Network error");
+  }
+}
+
+/* ================= RENDER ================= */
+function renderTasks(tasks){
+  tasksContainer.innerHTML = "";
+
+  if(!tasks || tasks.length===0){
+    noTasksBox.style.display="block";
+    return;
+  }
+
+  noTasksBox.style.display="none";
+
+  tasks.forEach(task=>{
+    const card=document.createElement("div");
+    card.className="task-card";
+
+    const title = task.title || `Task #${task.task_id}`;
+    const urgency = task.urgency || "flexible";
+    const reward = task.reward_amount ? `₹${task.reward_amount}` : "No reward";
+    const location = task.location || "Not specified";
+    const desc = task.description || "No description";
+
+    card.innerHTML = `
+      <div class="task-header">
+        <h3 class="task-title"></h3>
+        <div class="task-urgency ${urgencyClass(urgency)}">${urgency}</div>
+      </div>
+      <p><strong>Reward:</strong> ${reward}</p>
+      <p><strong>Location:</strong> ${location}</p>
+      <p><strong>Description:</strong> ${desc}</p>
+      <div class="task-actions">
+        <button class="btn btn-secondary" onclick="viewTask(${task.task_id})">
+          <i class="fas fa-eye"></i> View
+        </button>
+        <button class="btn btn-primary" onclick="acceptTask(${task.task_id})">
+          <i class="fas fa-check"></i> Accept
+        </button>
+      </div>
+    `;
+
+    card.querySelector(".task-title").textContent = title;
+    tasksContainer.appendChild(card);
+  });
+}
+
+/* ================= ACTIONS ================= */
+function viewTask(id){
+  window.location.href = `helper_task_detail.html?task_id=${id}`;
+}
+
+async function acceptTask(id){
+  if(!confirm("Accept this task?")) return;
+
+  try{
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${id}/accept`,{
+      method:"POST",
+      headers:{ Authorization:"Bearer "+token }
     });
 
-    // category tags UI only (abhi backend category nahi store kar raha)
-    const categoryTags = document.querySelectorAll(".category-tag");
-    categoryTags.forEach(tag => {
-      tag.addEventListener("click", () => {
-        categoryTags.forEach(t => t.classList.remove("active"));
-        tag.classList.add("active");
-        // abhi sirf UI; future me category filter laga sakte ho
-      });
-    });
+    const data = await res.json().catch(()=>({}));
 
-    // INIT
+    if(!res.ok){
+      alert(data.message || "❌ Failed to accept");
+      return;
+    }
+
+    alert("✅ Task accepted");
     loadOpenTasks();
-  </script>
+  }catch(err){
+    console.error(err);
+    alert("❌ Network error");
+  }
+}
+
+/* ================= INIT ================= */
+loadOpenTasks();
+</script>
+
 </body>
 </html>
-
-
