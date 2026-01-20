@@ -213,13 +213,12 @@ iframe{
         <button class="btn btn-primary" onclick="acceptTask()">
           <i class="fas fa-check"></i> Accept Task
         </button>
-          <button class="btn btn-primary" onclick="openChat()">
-    <i class="fas fa-comments"></i> Chat with Customer
-  </button>
-       <button class="btn btn-primary" onclick="completeTask(taskId)">
-  <i class="fas fa-check-circle"></i> Mark Completed
-</button>
-
+        <button class="btn btn-primary" onclick="openChat()">
+          <i class="fas fa-comments"></i> Chat with Customer
+        </button>
+        <button class="btn btn-primary" onclick="completeTask()">
+          <i class="fas fa-check-circle"></i> Mark Completed
+        </button>
       </div>
 
     </div>
@@ -227,101 +226,119 @@ iframe{
 </div>
 
 <script>
-const BACKEND_URL="https://swadrive-backend.onrender.com";
-const token=localStorage.getItem("token");
-const params=new URLSearchParams(window.location.search);
-const taskId=params.get("task_id");
+/* ================= CONFIG ================= */
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
+const token = localStorage.getItem("token");
+const params = new URLSearchParams(window.location.search);
+const taskId = params.get("task_id");
 
-if(!token){alert("Login first");location.href="login.html"}
-if(!taskId){alert("Task id missing")}
+/* ================= DOM ================= */
+const titleEl = document.getElementById("title");
+const statusEl = document.getElementById("status");
+const urgencyEl = document.getElementById("urgency");
+const rewardEl = document.getElementById("reward");
+const descEl = document.getElementById("description");
+const locationEl = document.getElementById("location");
+const mapEl = document.getElementById("map");
 
-async function loadTask(){
-  const res=await fetch(`${BACKEND_URL}/api/helper/tasks/${taskId}`,{
-    headers:{Authorization:"Bearer "+token}
-  });
-  if(!res.ok){alert("Failed to load task");return;}
-  const t=await res.json();
-
-  title.textContent=t.title;
-  status.textContent=(t.status||"open").toUpperCase();
-  urgency.textContent=t.urgency||"-";
-  reward.textContent=t.reward_amount||0;
-  description.textContent=t.description||"-";
-  location.textContent=t.location||"-";
-
-  if(t.location){
-    map.src=`https://www.google.com/maps?q=${encodeURIComponent(t.location)}&output=embed`;
-  }
+/* ================= GUARDS ================= */
+if (!token) {
+  alert("❌ Login first");
+  location.href = "login.html";
 }
-  
-
-  
-async function acceptTask(){
-  if(!confirm("Accept this task?"))return;
-  const res=await fetch(`${BACKEND_URL}/api/tasks/${taskId}/accept`,{
-    method:"POST",
-    headers:{Authorization:"Bearer "+token}
-  });
-  const data=await res.json();
-  if(!res.ok){alert(data.message||"Failed");return;}
-  alert("Task accepted ✅");
-  location.href="tasks.html";
+if (!taskId) {
+  alert("❌ Task id missing");
+  history.back();
 }
 
-loadTask();
-
-  async function completeTask(taskId) {
-  if (!confirm("✅ Are you sure you completed this task?")) return;
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Login first");
-    location.href = "login.html";
-    return;
-  }
-
+/* ================= LOAD TASK ================= */
+async function loadTask() {
   try {
-    const res = await fetch(
-      `${BACKEND_URL}/api/tasks/${taskId}/complete`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token
-        }
-      }
-    );
+    const res = await fetch(`${BACKEND_URL}/api/helper/tasks/${taskId}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
 
-    const data = await res.json();
+    const t = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      alert("❌ " + data.message);
+      alert(t.message || "Failed to load task");
+      return;
+    }
+
+    titleEl.textContent = t.title || `Task #${taskId}`;
+    statusEl.textContent = (t.status || "open").toUpperCase();
+    urgencyEl.textContent = t.urgency || "-";
+    rewardEl.textContent = t.reward_amount || 0;
+    descEl.textContent = t.description || "-";
+    locationEl.textContent = t.location || "-";
+
+    if (t.location) {
+      mapEl.src = `https://www.google.com/maps?q=${encodeURIComponent(t.location)}&output=embed`;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Network error while loading task");
+  }
+}
+
+/* ================= ACCEPT TASK ================= */
+async function acceptTask() {
+  if (!confirm("Accept this task?")) return;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/accept`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      alert(data.message || "❌ Failed to accept task");
+      return;
+    }
+
+    alert("✅ Task accepted");
+    location.href = "tasks.html";
+  } catch (err) {
+    console.error(err);
+    alert("❌ Network error");
+  }
+}
+
+/* ================= COMPLETE TASK ================= */
+async function completeTask() {
+  if (!confirm("✅ Are you sure you completed this task?")) return;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/complete`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      alert("❌ " + (data.message || "Failed"));
       return;
     }
 
     alert("🎉 Task completed!");
     location.href = "helper_my_tasks.html";
-
   } catch (err) {
+    console.error(err);
     alert("❌ Network error");
   }
 }
 
-
-  // ---------------- OPEN CHAT ----------------
+/* ================= CHAT ================= */
 function openChat() {
-  if (!taskId) {
-    alert("Task id missing");
-    return;
-  }
-
-  // chat.html page par le jaayega
   window.location.href = `chat.html?task_id=${taskId}`;
 }
 
+/* ================= INIT ================= */
+loadTask();
 </script>
 
 </body>
 </html>
-
-
-
