@@ -50,6 +50,18 @@ const BACKEND_URL = "https://swadrive-backend.onrender.com";
 const token = localStorage.getItem("token");
 const taskId = new URLSearchParams(window.location.search).get("task_id");
 
+const { data } = await supabase
+  .from("messages")
+  .select("*")
+  .eq("chat_id", chatId)
+  .order("created_at");
+await supabase.from("messages").insert({
+  chat_id,
+  sender_id: user.id,
+  message: text
+});
+
+  
 /* ================= AUTH GUARD ================= */
 if (!token) {
   alert("Login required");
@@ -179,4 +191,5 @@ startChat();
 
 </body>
 </html>
+
 
