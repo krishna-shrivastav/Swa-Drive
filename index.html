@@ -5,16 +5,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SwaDrive - Login & Register</title>
-
-    <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-
-  <style>
+    <style>
         :root {
             --primary: #4776E6;
             --primary-gradient: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
@@ -388,18 +385,34 @@
             </div>
 
             <div class="auth-body">
-
-                <!-- ========== LOGIN ========== -->
+                <!-- Login Form -->
                 <div class="tab-content active" id="login-content">
-                    <form id="login-form">
+                    <form onsubmit="handleLogin(event)"  id="login-form" >
                         <div class="input-group">
-                            <label class="input-label">Email</label>
-                            <input type="email" id="login-email" class="input-field" required>
+                            <label class="input-label" for="login-email">Email</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="login-email" class="input-field with-icon"
+                                    placeholder="Your email address" required>
+                            </div>
                         </div>
 
                         <div class="input-group">
-                            <label class="input-label">Password</label>
-                            <input type="password" id="login-password" class="input-field" required>
+                            <label class="input-label" for="login-password">Password</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="login-password" class="input-field with-icon"
+                                    placeholder="Your password" required>
+                            </div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="remember-me">
+                            <label for="remember-me">Remember me</label>
+                        </div>
+
+                        <div class="forgot-password">
+                            <a href="#">Forgot password?</a>
                         </div>
 
                         <button type="submit" class="btn">Sign In</button>
@@ -410,27 +423,49 @@
                     </div>
                 </div>
 
-                <!-- ========== REGISTER ========== -->
+                <!-- Register Form -->
                 <div class="tab-content" id="register-content">
-                    <form id="register-form">
+                    <form onsubmit="handleregister(event)"  id="register-form">
                         <div class="input-group">
-                            <label class="input-label">Full Name</label>
-                            <input type="text" id="register-name" class="input-field" required>
+                            <label class="input-label" for="register-name">Full Name</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="register-name" class="input-field with-icon"
+                                    placeholder="Your full name" required>
+                            </div>
                         </div>
 
                         <div class="input-group">
-                            <label class="input-label">Email</label>
-                            <input type="email" id="register-email" class="input-field" required>
+                            <label class="input-label" for="register-email">Email</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-envelope input-icon"></i>
+                                <input type="email" id="register-email" class="input-field with-icon"
+                                    placeholder="Your email address" required>
+                            </div>
                         </div>
 
                         <div class="input-group">
-                            <label class="input-label">Password</label>
-                            <input type="password" id="register-password" class="input-field" required>
+                            <label class="input-label" for="register-password">Password</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="register-password" class="input-field with-icon"
+                                    placeholder="Create a password" required>
+                            </div>
                         </div>
 
                         <div class="input-group">
-                            <label class="input-label">Confirm Password</label>
-                            <input type="password" id="register-confirm-password" class="input-field" required>
+                            <label class="input-label" for="register-confirm-password">Confirm Password</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="register-confirm-password" class="input-field with-icon"
+                                    placeholder="Confirm your password" required>
+                            </div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="terms" required>
+                            <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy
+                                    Policy</a></label>
                         </div>
 
                         <button type="submit" class="btn btn-secondary">Create Account</button>
@@ -440,130 +475,136 @@
                         Already have an account? <a href="#" id="show-login">Sign in</a>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- =================== JS =================== -->
-    <script>
-        const API_BASE = "https://swadrive-backend.onrender.com/api";
+<script>
+/* ================= TAB SWITCH ================= */
+const loginTab = document.getElementById('login-tab');
+const registerTab = document.getElementById('register-tab');
+const loginContent = document.getElementById('login-content');
+const registerContent = document.getElementById('register-content');
+const showRegister = document.getElementById('show-register');
+const showLogin = document.getElementById('show-login');
 
-        /* ---------- TAB SWITCH ---------- */
-        const loginTab = document.getElementById("login-tab");
-        const registerTab = document.getElementById("register-tab");
-        const loginContent = document.getElementById("login-content");
-        const registerContent = document.getElementById("register-content");
-        const showRegister = document.getElementById("show-register");
-        const showLogin = document.getElementById("show-login");
-
-        function switchToLogin() {
-            loginTab.classList.add("active");
-            registerTab.classList.remove("active");
-            loginContent.classList.add("active");
-            registerContent.classList.remove("active");
-        }
-
-        function switchToRegister() {
-            registerTab.classList.add("active");
-            loginTab.classList.remove("active");
-            registerContent.classList.add("active");
-            loginContent.classList.remove("active");
-        }
-
-        loginTab.onclick = switchToLogin;
-        registerTab.onclick = switchToRegister;
-        showRegister.onclick = e => { e.preventDefault(); switchToRegister(); };
-        showLogin.onclick = e => { e.preventDefault(); switchToLogin(); };
-
-        /* ---------- LOGIN ---------- */
-        document.getElementById("login-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            try {
-                const res = await fetch(`${API_BASE}/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email: document.getElementById("login-email").value.trim(),
-                        password: document.getElementById("login-password").value
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
-
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user_role", data.user.role);
-
-                window.location.href = data.user.role === "helper"
-                    ? "helper_my_tasks.html"
-                    : "Home.html";
-
-            } catch (err) {
-                alert(err.message || "Login failed");
-            }
-        });
-
-        /* ---------- REGISTER ---------- */
-        document.getElementById("register-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const password = document.getElementById("register-password").value;
-            const confirm = document.getElementById("register-confirm-password").value;
-
-            if (password !== confirm) {
-                alert("Passwords do not match");
-                return;
-            }
-
-            try {
-                const res = async function handleLogin(e) {
-  e.preventDefault();
-
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email, password
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  window.location.href = "Home.html";
+function switchToLogin() {
+  loginTab.classList.add('active');
+  registerTab.classList.remove('active');
+  loginContent.classList.add('active');
+  registerContent.classList.remove('active');
 }
 
-async function handleregister(e) {
-  e.preventDefault();
+function switchToRegister() {
+  registerTab.classList.add('active');
+  loginTab.classList.remove('active');
+  registerContent.classList.add('active');
+  loginContent.classList.remove('active');
+}
 
-  const email = document.getElementById("register-email").value;
+loginTab.onclick = switchToLogin;
+registerTab.onclick = switchToRegister;
+showRegister.onclick = e => { e.preventDefault(); switchToRegister(); };
+showLogin.onclick = e => { e.preventDefault(); switchToLogin(); };
+
+/* ================= BACKEND URL ================= */
+const BASE_URL = "https://swadrive-backend-2bou.onrender.com/api";
+
+/* ================= LOGIN ================= */
+async function handleLogin(event) {
+  event.preventDefault();
+
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value.trim();
+
+  try {
+    const res = await fetch(`${BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "❌ Login failed");
+      return;
+    }
+
+    // ✅ CORRECT FIELDS
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user_id", data.user.user_id);
+    localStorage.setItem("user_role", data.user.role);
+
+    alert("✅ Login successful!");
+
+    if (data.user.role === "customer") {
+      window.location.href = "Home.html";
+    } else if (data.user.role === "helper") {
+      window.location.href = "tasks.html";
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error");
+  }
+}
+
+/* ================= REGISTER ================= */
+async function handleregister(event) {
+  event.preventDefault();
+
+  const full_name = document.getElementById("register-name").value.trim();
+  const email = document.getElementById("register-email").value.trim();
   const password = document.getElementById("register-password").value;
+  const confirm = document.getElementById("register-confirm-password").value;
 
-  const { error } = await supabase.auth.signUp({
-    email, password
-  });
-
-  if (error) {
-    alert(error.message);
+  if (password !== confirm) {
+    alert("❌ Passwords do not match");
     return;
   }
 
-  alert("Registered successfully. Login now.");
+  const role = prompt("Type role: customer or helper");
+
+  if (!["customer", "helper"].includes(role)) {
+    alert("❌ Role must be customer or helper");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name,
+        email,
+        password,
+        phone: "0000000000",
+        role
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "❌ Registration failed");
+      return;
+    }
+
+    alert("✅ Registration successful! Now login.");
+    switchToLogin();
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Server / Network error");
+  }
 }
+</script>
 
-                switchToLogin();
 
-            } catch (err) {
-                alert(err.message || "Register failed");
-            }
-        });
-    </script>
-<script src="supabase.js"></script>
 
 </body>
+
+
+
 </html>
-
-
