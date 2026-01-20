@@ -1,152 +1,65 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Notifications | SwaDrive</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <style>
-body{
-  font-family:Poppins,system-ui;
-  background:#f7fafc;
-}
-.container{
-  max-width:800px;
-  margin:30px auto;
-  padding:0 15px;
-}
-h2{
-  margin-bottom:20px;
-}
+body{font-family:Poppins;background:#f7fafc}
+.container{max-width:800px;margin:30px auto}
+h2{margin-bottom:20px}
 .card{
-  background:#fff;
-  padding:20px;
-  border-radius:12px;
+  background:#fff;padding:20px;border-radius:12px;
   box-shadow:0 6px 16px rgba(0,0,0,.1);
-  margin-bottom:15px;
-  cursor:pointer;
-  transition:.2s;
+  margin-bottom:15px;cursor:pointer
 }
-.card:hover{transform:translateY(-2px)}
 .card.unread{border-left:5px solid #4776E6}
-.time{
-  font-size:.8rem;
-  color:#718096;
-  margin-top:6px;
-}
-.empty{
-  text-align:center;
-  color:#718096;
-  padding:40px;
-  background:#fff;
-  border-radius:12px;
-  box-shadow:0 6px 16px rgba(0,0,0,.08);
-}
+.time{font-size:.8rem;color:#718096}
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <h2>🔔 Notifications</h2>
-  <div id="list"></div>
+<h2>🔔 Notifications</h2>
+<div id="list"></div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const BACKEND = "https://swadrive-backend.onrender.com";
-const token = localStorage.getItem("token");
-const list = document.getElementById("list");
+const BACKEND="https://swadrive-backend-2bou.onrender.com";
+const token=localStorage.getItem("token");
+if(!token) location.href="login.html";
 
-/* ================= GUARD ================= */
-if (!token) {
-  location.href = "login.html";
+async function load(){
+ const r=await fetch(`${BACKEND}/api/notifications`,{
+  headers:{Authorization:"Bearer "+token}
+ });
+ const data=await r.json();
+ const list=document.getElementById("list");
+ list.innerHTML="";
+ data.forEach(n=>{
+  const d=document.createElement("div");
+  d.className="card "+(n.is_read? "" : "unread");
+  d.innerHTML=`
+    <b>${n.title}</b>
+    <p>${n.message}</p>
+    <div class="time">${new Date(n.created_at).toLocaleString()}</div>
+  `;
+  d.onclick=()=>markRead(n.notification_id,n.task_id);
+  list.appendChild(d);
+ });
 }
 
-/* ================= LOAD ================= */
-async function loadNotifications() {
-  list.innerHTML = "";
-
-  try {
-    const res = await fetch(`${BACKEND}/api/notifications`, {
-      headers: { Authorization: "Bearer " + token }
-    });
-
-    const data = await res.json().catch(() => []);
-
-    if (!res.ok) {
-      console.error(data);
-      alert("❌ Failed to load notifications");
-      return;
-    }
-
-    const notifications = Array.isArray(data) ? data : [];
-
-    if (notifications.length === 0) {
-      list.innerHTML = `
-        <div class="empty">
-          <i class="fas fa-bell-slash" style="font-size:2rem;margin-bottom:10px"></i>
-          <p>No notifications yet</p>
-        </div>
-      `;
-      return;
-    }
-
-    notifications.forEach(n => {
-      const card = document.createElement("div");
-      card.className = "card " + (n.is_read ? "" : "unread");
-
-      const title = n.title || "Notification";
-      const message = n.message || "";
-      const time = n.created_at
-        ? new Date(n.created_at).toLocaleString("en-IN")
-        : "";
-
-      card.innerHTML = `
-        <b>${title}</b>
-        <p>${message}</p>
-        <div class="time">${time}</div>
-      `;
-
-      card.onclick = () => markRead(n.notification_id, n.task_id);
-      list.appendChild(card);
-    });
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Network error while loading notifications");
-  }
+async function markRead(id,taskId){
+ await fetch(`${BACKEND}/api/notifications/${id}/read`,{
+  method:"PUT",
+  headers:{Authorization:"Bearer "+token}
+ });
+ if(taskId)
+   window.location.href=`task_detail.html?task_id=${taskId}`;
 }
 
-/* ================= MARK READ ================= */
-async function markRead(id, taskId) {
-  try {
-    await fetch(`${BACKEND}/api/notifications/${id}/read`, {
-      method: "PUT",
-      headers: { Authorization: "Bearer " + token }
-    });
-
-    if (taskId) {
-      window.location.href = `task_detail.html?task_id=${taskId}`;
-    } else {
-      loadNotifications();
-    }
-  } catch (err) {
-    console.error(err);
-    alert("❌ Failed to mark notification as read");
-  }
-}
-await supabase.from("notifications").insert({
-  user_id,
-  title: "Task Update",
-  message: "Your task was accepted"
-});
-
-/* ================= INIT ================= */
-loadNotifications();
+load();
 </script>
-<script src="supabase.js"></script>
-
 </body>
 </html>
-
