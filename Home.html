@@ -1,19 +1,18 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SwaDrive - Home</title>
-
+    <title>Petro-Service - Community-Powered Needs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-
-   <style>
+    <style>
         :root {
             --primary: #4776E6;
             --primary-gradient: linear-gradient(135deg, #4776E6 0%, #8E54E9 100%);
@@ -475,122 +474,259 @@
 </head>
 
 <body>
-
-    <!-- ================= HEADER ================= -->
+   
     <header>
-        <nav class="navbar">
-            <div class="nav-actions">
-                <a href="notifications.html" class="notification-bell">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge" id="notifCount" style="display:none;">0</span>
-                </a>
-            </div>
-        </nav>
+        <header>
+            
 
-        <div class="header-content">
-            <h1>Welcome to Swa Drive</h1>
-            <p>
-                Need something? List it. On the go? Help someone.
-                <strong>Petro-Service</strong> makes it happen.
-            </p>
 
-            <div class="btn-container">
-                <button class="btn btn-primary" onclick="window.location.href='d1.html'">
-                    <i class="fas fa-plus-circle"></i> List a Need
-                </button>
+ <nav class="navbar">
+  <div class="nav-actions">
+    <a href="notifications.html" class="notification-bell">
+  <i class="fas fa-bell"></i>
+  <span class="badge" id="notifCount" style="display:none;">0</span>
+</a>
 
-                <button class="btn" onclick="window.location.href='tasks.html'">
-                    <i class="fas fa-hand-holding-heart"></i> Start Helping
-                </button>
-            </div>
+  </div>
+</nav>
+<div class="header-content">
+                <div class="header-login-signup">
+                </div>
 
-            <!-- ===== PROFILE BOX ===== -->
-            <div class="promain">
-                <div class="pro" id="profileBox">
-                    <i class="fa-solid fa-circle-user"></i>
+                
+                <h1>Welcome to Swa Drive</h1>
+                <p>Need something? List it. On the go? Help someone. <strong>Petro-Service</strong> makes it happen —
+                    fast,
+                    local, and powered by your community.</p>
+                <div class="btn-container">
 
-                    <div class="home-box" style="text-align:left;margin-left:10px;">
-                        <p><strong>Full Name:</strong> <em id="userName"></em></p>
-                        <p><strong>Email:</strong> <em id="userEmail"></em></p>
+                    <button class="btn btn-primary" onclick="window.location.href='d1.html'">
+                        <i class="fas fa-plus-circle"></i> List a Need
+                    </button>
 
-                        <button onclick="logout()"
-                            style="width:120px;height:45px;background:#e87726;border-radius:15px;font-size:18px;">
-                            Logout
-                        </button>
+                    <button class="btn" onclick="window.location.href='task_detail.html'"><i
+                            class="fas fa-hand-holding-heart"></i>
+                        Start Helping</button>
+
+                    <button class="btn btn-primary" onclick="window.location.href='task_detail.html'">
+                        <i class="fas fa-plus-circle"></i> task-list
+                    </button>
+                </div>
+                <div class="promain" style="margin-left: 100px;position: absolute; margin: 0px; ">
+                    <div class="pro">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <div class="home-box" style="text-align: start; margin-left: 10px; margin-bottom: 10px;">
+                            <p><strong style="font-size: 25px;">Full Name:</strong> <em id="userName"></em></p>
+                            <p><strong style="font-size: 25px;">Email:</strong> <em id="userEmail"></em></p>
+                            <button onclick="logout()"
+                                style="width: 100px; height: 50px; background-color: rgb(232, 119, 38); color: black; font-size: 25px; border-radius: 20px;">Logout</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- ================= BODY CONTENT (UNCHANGED) ================= -->
-    <!-- (तुम्हारे sections / footer / text बिल्कुल same रखे गए हैं) -->
+        <section>
+            <h2>How It Works</h2>
+            <p class="section-subtitle"  style="color: black;"></p>
+            <div class="features">
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h3>1. List Your Need</h3>
+                    <p>Post Petrol , Diesel essentials vehicle isuue , or you need delivered quickly and securely
+                        through
+                        our platform.
+                    </p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-people-arrows"></i>
+                    </div>
+                    <h3>2. Get Matched</h3>
+                    <p>Nearby helpers or through our delivery agent instantly see your request and pick it up when
+                        they're
+                        already out and about.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3>3. Get It & Go</h3>
+                    <p>Receive your item safely, confirm the delivery, and rate your experience. That simple.</p>
+                </div>
+            </div>
+        </section>
 
-    <footer>
-        <p>© SwaDrive. All rights reserved.</p>
-    </footer>
+        <section class="alt-section" style="background-color: rgb(117, 195, 237);">
+            <h2 style="color: rgb(49, 88, 217);">Who Can Use Swa Drive?</h2>
+            <p class="section-subtitle">A platform that brings together people who need help and those willing to offer
+                it
+            </p>
+            <div class="features">
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <h3>For Requesters</h3>
+                    <p> If there vehicle is out of fuel or unable to visit the petrolpump ? Just list what you need and
+                        let
+                        a friendly neighbor help you
+                        out.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <h3>For Helpers</h3>
+                    <p>Running errands anyway? Deliver a few items on your route and earn rewards while making someone's
+                        day
+                        better.</p>
+                </div>
+                <!-- <div class="feature-box">
+                <div class="feature-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <h3>For Busy Persons</h3>
+                <p>if you have Get Help from your neighbors and get your tasks done and let them earn
+                    better.</p> -->
+            </div>
+            </div>
+        </section>
 
-    <!-- ================= JS ================= -->
-    <script>
-        const API_BASE = "https://swadrive-backend.onrender.com";
-        const token = localStorage.getItem("token");
+        <section class="why-choose"  >
+            <h2  style="color: rgb(13, 110, 227);">Why Choose Swa Drive?</h2>
+            <p class="section-subtitle">We're more than just a delivery app - we're building stronger communities</p>
+            <div class="features">
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Fast & Local</h3>
+                    <p>Quick response from real people in your neighborhood or through our delivery agent, often within
+                        minutes of your request.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Community First</h3>
+                    <p>Built to strengthen local connections and create resilient support systems where neighbors help
+                        neighbors.</p>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3>Easy to Earn</h3>
+                    <p>Deliver while commuting and earn simple rewards that can be redeemed for gift cards or cash
+                        benefits.
+                    </p>
+                </div>
+            </div>
+        </section>
 
-        /* ---------- AUTH GUARD ---------- */
-        if (!token) {
-            window.location.href = "index.html";
-        }
+        <footer>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h3>Swa Drive</h3>
+                    <p>Community-powered needs, delivered with care.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
 
-        /* ---------- PROFILE TOGGLE ---------- */
-        document.getElementById("profileBox").addEventListener("click", () => {
-            document.getElementById("profileBox").classList.toggle("active");
-        });
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <a href="#">About Us</a>
+                    <a href="#">Our Mission</a>
+                    <a href="#">Careers</a>
+                    <a href="#">Press</a>
+                </div>
 
-        /* ---------- LOAD USER INFO ---------- */
-        async function loadUserInfo() {
-            try {
-                const payload = JSON.parse(atob(token.split(".")[1]));
-                document.getElementById("userName").textContent = payload.user_id;
-                document.getElementById("userEmail").textContent = "Logged User";
-            } catch {
-                logout();
-            }
-        }
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <a href="#">FAQ</a>
+                    <a href="#">Contact Us</a>
+                    <a href="#">Safety Guidelines</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
 
-        /* ---------- LOGOUT ---------- */
-        function logout() {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user_role");
-            window.location.href = "index.html";
-        }
+                <div class="footer-links">
+                    <h4>Get Started</h4>
+                    <a href="#">Register Now</a>
+                    <a href="#">How It Works</a>
+                    <a href="#">Community Guidelines</a>
+                    <a href="#">Rewards Program</a>
+                </div>
 
-        /* ---------- NOTIFICATIONS ---------- */
-        async function loadNotificationCount() {
-            try {
-                const res = await fetch(`${API_BASE}/api/notifications/unread-count`, {
-                    headers: { Authorization: "Bearer " + token }
-                });
 
-                if (!res.ok) return;
-
-                const data = await res.json();
-                const badge = document.getElementById("notifCount");
-
-                if (data.count > 0) {
-                    badge.style.display = "inline-block";
-                    badge.innerText = data.count;
-                } else {
-                    badge.style.display = "none";
-                }
-            } catch (err) {
-                console.error("Notification error", err);
-            }
-        }
-
-        loadUserInfo();
-        loadNotificationCount();
-    </script>
-<script src="supabase.js"></script>
-
+            </div>
+        </footer>
 </body>
-</html>
+<script>
 
+    // For Profile menu
+    const contents = document.querySelectorAll(".pro");
+
+    contents.forEach(box => {
+        box.addEventListener("click", () => {
+            box.classList.toggle("active");
+        });
+    });
+
+
+    //For shows user data in manu
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (savedUser) {
+        document.getElementById("userName").textContent = savedUser.fullName;
+        document.getElementById("userEmail").textContent = savedUser.email;
+    }
+
+    // Logout function
+    function logout() {
+        localStorage.removeItem("user"); // user ko hatao
+        alert("You have been logged out!");
+        window.location.href = "index.html"; // redirect to login
+    }
+
+    
+const BACKEND = "https://swadrive-backend-2bou.onrender.com";
+const token = localStorage.getItem("token");
+
+async function loadNotificationCount(){
+  if(!token) return;
+
+  const res = await fetch(
+    `${BACKEND}/api/notifications/unread-count`,
+    { headers:{ Authorization:"Bearer "+token } }
+  );
+
+  if(!res.ok) return;
+
+  const data = await res.json();
+  const badge = document.getElementById("notifCount");
+
+  if(data.count > 0){
+    badge.style.display = "inline-block";
+    badge.innerText = data.count;
+  }else{
+    badge.style.display = "none";
+  }
+}
+
+// ⏱ page load par call
+loadNotificationCount();
+
+
+    
+
+</script>
+
+
+</html>
