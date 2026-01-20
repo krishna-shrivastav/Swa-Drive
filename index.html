@@ -518,22 +518,42 @@
             }
 
             try {
-                const res = await fetch(`${API_BASE}/register`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        full_name: document.getElementById("register-name").value.trim(),
-                        email: document.getElementById("register-email").value.trim(),
-                        phone: "0000000000",
-                        password,
-                        role: "customer"
-                    })
-                });
+                const res = async function handleLogin(e) {
+  e.preventDefault();
 
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message);
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
 
-                alert("Registration successful! Please login.");
+  const { error } = await supabase.auth.signInWithPassword({
+    email, password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  window.location.href = "Home.html";
+}
+
+async function handleregister(e) {
+  e.preventDefault();
+
+  const email = document.getElementById("register-email").value;
+  const password = document.getElementById("register-password").value;
+
+  const { error } = await supabase.auth.signUp({
+    email, password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("Registered successfully. Login now.");
+}
+
                 switchToLogin();
 
             } catch (err) {
@@ -541,7 +561,9 @@
             }
         });
     </script>
+<script src="supabase.js"></script>
 
 </body>
 </html>
+
 
