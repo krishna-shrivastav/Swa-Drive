@@ -150,71 +150,102 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text)}
 </div>
 
 <script>
-const BACKEND_URL="https://swadrive-backend.onrender.com";
-const token=localStorage.getItem("token");
-const grid=document.getElementById("taskGrid");
-const emptyBox=document.getElementById("emptyBox");
+/* ================= CONFIG ================= */
+const BACKEND_URL = "https://swadrive-backend.onrender.com";
+const token = localStorage.getItem("token");
 
-if(!token){
-  alert("Login first");
-  location.href="login.html";
+/* ================= DOM ================= */
+const grid = document.getElementById("taskGrid");
+const emptyBox = document.getElementById("emptyBox");
+
+/* ================= GUARD ================= */
+if (!token) {
+  alert("❌ Login first");
+  location.href = "login.html";
 }
 
-async function loadMyTasks(){
-  try{
-    const res=await fetch(`${BACKEND_URL}/api/my-assigned-tasks`,{
-      headers:{Authorization:"Bearer "+token}
+/* ================= LOAD TASKS ================= */
+async function loadMyTasks() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/my-assigned-tasks`, {
+      headers: { Authorization: "Bearer " + token }
     });
 
-    if(!res.ok) throw new Error("Failed");
+    const tasks = await res.json().catch(() => []);
 
-    const tasks=await res.json();
-    render(tasks);
+    if (!res.ok) {
+      console.error(tasks);
+      alert("❌ Failed to load assigned tasks");
+      return;
+    }
 
-  }catch(err){
-    alert("Failed to load tasks");
+    renderTasks(Array.isArray(tasks) ? tasks : []);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Network error while loading tasks");
   }
 }
 
-function render(tasks){
-  grid.innerHTML="";
-  if(!tasks || tasks.length===0){
-    emptyBox.style.display="block";
+/* ================= RENDER ================= */
+function renderTasks(tasks) {
+  grid.innerHTML = "";
+
+  if (!tasks || tasks.length === 0) {
+    emptyBox.style.display = "block";
     return;
   }
 
-  tasks.forEach(t=>{
-    const card=document.createElement("div");
-    card.className="card";
+  emptyBox.style.display = "none";
 
-    card.innerHTML=`
+  tasks.forEach(t => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const title = t.title || `Task #${t.task_id}`;
+    const status = (t.status || "assigned").toUpperCase();
+    const urgency = t.urgency || "-";
+    const location = t.location || "-";
+    const reward = t.reward_amount || 0;
+
+    card.innerHTML = `
       <div class="card-header">
-        <h3>${t.title}</h3>
-        <span class="status">${t.status.toUpperCase()}</span>
+        <h3>${title}</h3>
+        <span class="status">${status}</span>
       </div>
       <div class="card-body">
-        <div class="row"><span class="label">Urgency</span></div>
-        <div class="value">${t.urgency || "-"}</div>
+        <div class="row">
+          <span class="label">Urgency</span>
+          <div class="value">${urgency}</div>
+        </div>
 
-        <div class="row"><span class="label">Location</span></div>
-        <div class="value">${t.location || "-"}</div>
+        <div class="row">
+          <span class="label">Location</span>
+          <div class="value">${location}</div>
+        </div>
 
-        <div class="row"><span class="label">Reward</span></div>
-        <div class="value">₹${t.reward_amount || 0}</div>
+        <div class="row">
+          <span class="label">Reward</span>
+          <div class="value">₹${reward}</div>
+        </div>
 
         <div class="actions">
-          <button class="btn btn-outline" onclick="view(${t.task_id})">View</button>
+          <button class="btn btn-outline" onclick="viewTask(${t.task_id})">
+            View
+          </button>
         </div>
       </div>
     `;
+
     grid.appendChild(card);
   });
 }
 
-function view(id){
-  location.href=`helper_task_detail.html?task_id=${id}`;
+/* ================= VIEW ================= */
+function viewTask(id) {
+  location.href = `helper_task_detail.html?task_id=${id}`;
 }
 
+/* ================= INIT ================= */
 loadMyTasks();
 </script>
 
