@@ -17,26 +17,9 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
 .msg{max-width:70%;padding:10px 14px;border-radius:14px;margin-bottom:10px;font-size:.9rem;position:relative}
 .msg.me{background:#4776E6;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
 .msg.other{background:#fff;color:#222;border-bottom-left-radius:4px}
-
-.time{
-    display:block;
-    font-size:.7rem;
-    opacity:.6;
-    margin-top:4px;
-}
-
-.tick {
-    font-size: 13px;
-    margin-left: 6px;
-    color: gray;
-}
-.tick.double {
-    color: gray;
-}
-.tick.seen {
-    color: #4A90E2; /* blue seen tick */
-}
-
+small{display:block;font-size:.7rem;opacity:.6;margin-top:4px}
+.tick{margin-left:6px}
+.tick.seen{color:#4A90E2}
 .chat-input{display:flex;padding:12px;background:#fff;border-top:1px solid #ddd}
 .chat-input input{flex:1;padding:10px;border-radius:30px;border:1px solid #ccc;outline:none}
 .chat-input button{background:#4776E6;color:#fff;border:none;padding:0 18px;margin-left:10px;border-radius:30px;font-size:1.1rem;cursor:pointer}
@@ -62,48 +45,69 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
 </div>
 
 <script>
+/* ================= CONFIG ================= */
 const BACKEND_URL = "https://swadrive-backend.onrender.com";
 const token = localStorage.getItem("token");
 const taskId = new URLSearchParams(window.location.search).get("task_id");
 
+/* ================= AUTH GUARD ================= */
 if (!token) {
-    alert("Login required");
-    window.location.href = "login.html";
+  alert("Login required");
+  window.location.href = "index.html";
+}
+
+if (!taskId) {
+  alert("Invalid task");
+  history.back();
+}
+
+/* ================= SAFE JWT DECODE ================= */
+let myUserId = null;
+try {
+  myUserId = JSON.parse(atob(token.split(".")[1])).user_id;
+} catch {
+  alert("Session expired");
+  localStorage.removeItem("token");
+  window.location.href = "index.html";
 }
 
 const messagesBox = document.getElementById("messages");
 const input = document.getElementById("text");
 
 let chatId = null;
-let myUserId = JSON.parse(atob(token.split(".")[1])).user_id;
+let poller = null;
 
-/* ------------------------------------------------
-   START CHAT
---------------------------------------------------*/
+/* ================= START CHAT ================= */
 async function startChat() {
-  const res = await fetch(`${BACKEND_URL}/api/chats/start`, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + token,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ task_id: taskId })
-  });
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/chats/start`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ task_id: taskId })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!res.ok) {
-    alert(data.message || "Chat start failed");
-    return;
+    if (!res.ok) {
+      alert(data.message || "Chat start failed");
+      return;
+    }
+
+    chatId = data.chat_id;
+    loadMessages();
+
+    poller = setInterval(loadMessages, 2000);
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
   }
-
-  chatId = data.chat_id;
-  loadMessages();
 }
 
-/* ------------------------------------------------
-   LOAD MESSAGES
---------------------------------------------------*/
+/* ================= LOAD MESSAGES ================= */
 async function loadMessages() {
   if (!chatId) return;
 
@@ -111,8 +115,9 @@ async function loadMessages() {
     headers: { Authorization: "Bearer " + token }
   });
 
-  const msgs = await res.json();
+  if (!res.ok) return;
 
+  const msgs = await res.json();
   messagesBox.innerHTML = "";
 
   msgs.forEach(m => {
@@ -121,65 +126,29 @@ async function loadMessages() {
 
     div.className = "msg " + (isMe ? "me" : "other");
 
-    let tick = "";
-
+    let ticks = "";
     if (isMe) {
-      if (m.seen === 1) {
-        tick = `<span class="tick seen"><i class="fas fa-check-double"></i></span>`;
-      } else if (m.delivered === 1) {
-        tick = `<span class="tick double"><i class="fas fa-check-double"></i></span>`;
-      } else {
-        tick = `<span class="tick"><i class="fas fa-check"></i></span>`;
-      }
+      if (m.seen == 1) ticks = `<span class="tick seen">✔✔</span>`;
+      else if (m.delivered == 1) ticks = `<span class="tick">✔✔</span>`;
+      else ticks = `<span class="tick">✔</span>`;
     }
 
-
-// Mark delivered
-fetch(`${BACKEND_URL}/api/chat/messages/mark-delivered`, {
-  method: "POST",
-  headers: { "Authorization": "Bearer " + token }
-});
-
-// Mark seen
-fetch(`${BACKEND_URL}/api/chat/messages/mark-seen`, {
-  method: "POST",
-  headers: { "Authorization": "Bearer " + token }
-});
-
-
-      
-  let ticks = "";
-
-if (m.sender_id === myUserId) {
-    // My message
-    if (m.seen == 1) {
-        ticks = `<span class="tick seen">✔✔</span>`;
-    } else if (m.delivered == 1) {
-        ticks = `<span class="tick">✔✔</span>`;
-    } else {
-        ticks = `<span class="tick">✔</span>`;
-    }
-}
-
-div.innerHTML = `
-  ${m.message}
-  <small>${new Date(m.created_at).toLocaleTimeString()} ${ticks}</small>
-`;
+    div.innerHTML = `
+      ${m.message}
+      <small>${new Date(m.created_at).toLocaleTimeString()} ${ticks}</small>
+    `;
 
     messagesBox.appendChild(div);
   });
 
   messagesBox.scrollTop = messagesBox.scrollHeight;
-
   markAsSeen();
 }
 
-/* ------------------------------------------------
-   SEND MESSAGE
---------------------------------------------------*/
+/* ================= SEND MESSAGE ================= */
 async function sendMsg() {
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || !chatId) return;
 
   await fetch(`${BACKEND_URL}/api/chats/${chatId}/messages`, {
     method: "POST",
@@ -194,25 +163,18 @@ async function sendMsg() {
   loadMessages();
 }
 
-/* ------------------------------------------------
-   MARK MESSAGES AS SEEN
---------------------------------------------------*/
+/* ================= MARK SEEN ================= */
 async function markAsSeen() {
+  if (!chatId) return;
   await fetch(`${BACKEND_URL}/api/chats/${chatId}/seen`, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 }
 
-/* ------------------------------------------------
-   AUTO REFRESH
---------------------------------------------------*/
-setInterval(loadMessages, 2000);
-
-// INIT
+/* ================= INIT ================= */
 startChat();
 </script>
 
 </body>
 </html>
-
