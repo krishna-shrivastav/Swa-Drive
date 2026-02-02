@@ -106,25 +106,34 @@ async function loadMessages(){
 
   messagesBox.innerHTML="";
 
-  msgs.forEach(m=>{
-    const div=document.createElement("div");
-    const isMe = Number(m.sender_id) === Number(myUserId);
-    div.className = isMe ? "msg me" : "msg other";
+ msgs.forEach(m => {
+  const div = document.createElement("div");
 
-    let ticks="";
-    if(isMe){
-      ticks = m.seen ? "✔✔" : "✔";
+  const isMe = Number(m.sender_id) === Number(myUserId);
+  div.className = "msg " + (isMe ? "me" : "other");
+
+  let ticks = "";
+  if (isMe) {
+    if (m.seen == 1) {
+      ticks = `<span class="tick seen">✔✔</span>`;
+    } else if (m.delivered == 1) {
+      ticks = `<span class="tick">✔✔</span>`;
+    } else {
+      ticks = `<span class="tick">✔</span>`;
     }
+  }
 
-    const senderLabel = isMe ? "You" : "Helper";
+  div.innerHTML = `
+    <div>${m.message}</div>
+    <small class="time">
+      ${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+      ${ticks}
+    </small>
+  `;
 
-    div.innerHTML=`
-      <small>${senderLabel}</small>
-      <div>${m.message}</div>
-      <span class="time">${new Date(m.created_at).toLocaleTimeString()} ${ticks}</span>
-    `;
-    messagesBox.appendChild(div);
-  });
+  messagesBox.appendChild(div);
+});
+
 
   messagesBox.scrollTop = messagesBox.scrollHeight;
 }
@@ -174,3 +183,4 @@ setTimeout(showQuickOptions,1000);
 
 </body>
 </html>
+
