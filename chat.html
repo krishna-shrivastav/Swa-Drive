@@ -78,7 +78,12 @@ const messagesBox = document.getElementById("messages");
 const input = document.getElementById("text");
 
 let chatId = null;
-const myUserId = JSON.parse(atob(token.split(".")[1])).user_id;
+const myUserId = JSON.parse(atob(token.split(".")[1])).id;
+const payload = JSON.parse(atob(token.split(".")[1]));
+const myUserId = payload.id || payload.userId;
+
+console.log("MY USER ID:", myUserId);
+
 
 /* START CHAT */
 async function startChat(){
@@ -183,4 +188,5 @@ setTimeout(showQuickOptions,1000);
 
 </body>
 </html>
+
 
