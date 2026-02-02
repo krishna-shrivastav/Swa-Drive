@@ -23,6 +23,31 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
     font-size:.7rem;
     opacity:.6;
     margin-top:4px;
+
+
+
+    
+
+.qbtn{
+  background:#f1f5ff;
+  border:1px solid #4776E6;
+  color:#4776E6;
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:.8rem;
+  cursor:pointer;
+}
+.qbtn:hover{
+  background:#4776E6;
+  color:#fff;
+}
+
+
+
+    
+
+
+    
 }
 
 .tick {
@@ -50,6 +75,17 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
     <i class="fas fa-arrow-left" onclick="history.back()"></i>
     Task Chat
   </div>
+
+
+
+    
+<div id="quickOptions" style="padding:10px;background:#fff;border-top:1px solid #ddd;display:none;flex-wrap:wrap;gap:8px">
+  <button onclick="sendQuick('How much will the service cost?')" class="qbtn">💰 Cost</button>
+  <button onclick="sendQuick('What is included in this service?')" class="qbtn">🛠 Service Details</button>
+  <button onclick="sendQuick('How much time will it take?')" class="qbtn">⏱ Time</button>
+  <button onclick="sendQuick('Is there any extra charge?')" class="qbtn">➕ Extra Charges</button>
+  <button onclick="sendQuick('Can you explain the process?')" class="qbtn">📋 Process</button>
+</div>
 
   <div class="chat-messages" id="messages"></div>
 
@@ -204,6 +240,67 @@ async function markAsSeen() {
   });
 }
 
+
+
+
+
+
+
+
+
+function showQuickOptions(){
+  document.getElementById("quickOptions").style.display = "flex";
+}
+
+function hideQuickOptions(){
+  document.getElementById("quickOptions").style.display = "none";
+}
+
+async function sendQuick(text){
+  hideQuickOptions();
+
+  await fetch(`${BACKEND_URL}/api/chats/${chatId}/messages`, {
+    method:"POST",
+    headers:{
+      Authorization:"Bearer "+token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ message: text })
+  });
+
+  loadMessages();
+
+  // After 2 sec show follow-up options
+  setTimeout(showFollowUpOptions, 2000);
+}
+
+function showFollowUpOptions(){
+  document.getElementById("quickOptions").innerHTML = `
+    <button onclick="showMainOptions()" class="qbtn">🔁 Ask something else</button>
+    <button onclick="sendQuick('Thank you')" class="qbtn">✅ Done</button>
+  `;
+  showQuickOptions();
+}
+
+function showMainOptions(){
+  document.getElementById("quickOptions").innerHTML = `
+    <button onclick="sendQuick('How much will the service cost?')" class="qbtn">💰 Cost</button>
+    <button onclick="sendQuick('What is included in this service?')" class="qbtn">🛠 Service Details</button>
+    <button onclick="sendQuick('How much time will it take?')" class="qbtn">⏱ Time</button>
+    <button onclick="sendQuick('Is there any extra charge?')" class="qbtn">➕ Extra Charges</button>
+    <button onclick="sendQuick('Can you explain the process?')" class="qbtn">📋 Process</button>
+  `;
+  showQuickOptions();
+}
+setTimeout(showMainOptions, 1000);
+
+
+
+
+    
+
+
+    
 /* ------------------------------------------------
    AUTO REFRESH
 --------------------------------------------------*/
@@ -215,3 +312,4 @@ startChat();
 
 </body>
 </html>
+
