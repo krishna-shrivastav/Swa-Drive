@@ -48,6 +48,22 @@ body{margin:0;font-family:Poppins,system-ui;background:#f4f6fb}
 
 
 
+.msg.me{
+  background:#4776E6;
+  color:#fff;
+  margin-left:auto;
+}
+
+.msg.other{
+  background:#fff;
+  color:#222;
+  margin-right:auto;
+}
+
+
+
+    
+
 .qbtn{
   background:#f1f5ff;
   border:1px solid #4776E6;
@@ -162,9 +178,10 @@ async function loadMessages() {
 
   msgs.forEach(m => {
     const div = document.createElement("div");
-    const isMe = m.sender_id === myUserId;
+ const isMe = Number(m.sender_id) === Number(myUserId);
 
-    div.className = "msg " + (isMe ? "me" : "other");
+div.className = isMe ? "msg me" : "msg other";
+
 
     let tick = "";
 
@@ -207,9 +224,12 @@ if (m.sender_id === myUserId) {
 }
 
 div.innerHTML = `
-  ${m.message}
-  <small>${new Date(m.created_at).toLocaleTimeString()} ${ticks}</small>
+  <div>${m.message}</div>
+  <span class="time">
+    ${new Date(m.created_at).toLocaleTimeString()} ${ticks}
+  </span>
 `;
+
 
     messagesBox.appendChild(div);
   });
@@ -292,6 +312,13 @@ function showMainOptions(){
 }
 
 
+const senderLabel = isMe ? "You" : "Helper";
+
+div.innerHTML = `
+  <small>${senderLabel}</small>
+  <div>${m.message}</div>
+  <span class="time">${new Date(m.created_at).toLocaleTimeString()} ${ticks}</span>
+`;
 
 
 
