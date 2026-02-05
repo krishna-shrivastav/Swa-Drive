@@ -1,4 +1,4 @@
-
+    
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,7 +105,9 @@
 
     <div id="task-list"></div>
 </div>
-
+<button onclick="payNow()" class="btn btn-primary">
+  Pay Now
+</button>
 <script>
 const BACKEND_URL = "https://swadrive-backend-2bou.onrender.com";
 const taskList = document.getElementById("task-list");
@@ -443,6 +445,40 @@ async function submitReview(event, taskId) {
   }
 }
 
+
+
+
+
+async function payNow(){
+  const res = await fetch(`${BACKEND_URL}/api/payments/create`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+localStorage.getItem("token")
+    },
+    body:JSON.stringify({ task_id })
+  });
+
+  const data = await res.json();
+
+  const options = {
+    key: data.key,
+    amount: data.amount,
+    currency: "INR",
+    name: "SwaDrive",
+    description: "Task Payment",
+    order_id: data.order_id,
+    handler: () => alert("Payment processing… invoice will be generated"),
+    theme: { color: "#4776E6" }
+  };
+
+  new Razorpay(options).open();
+}
+
+
+
+
+    
 /* ========== INIT ========== */
 loadTasks();
 </script>
@@ -450,3 +486,4 @@ loadTasks();
 
 </body>
 </html>
+
