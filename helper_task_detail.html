@@ -169,6 +169,111 @@ iframe{
   .label{width:auto;margin-bottom:4px}
   .card-header h1{font-size:1.3rem}
 }
+
+
+
+
+
+/* Quote Modal */
+.quote-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.quote-modal {
+  background: #fff;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease;
+}
+
+.quote-modal h2 {
+  margin-bottom: 16px;
+  font-size: 20px;
+  color: #1f2937;
+}
+
+.quote-modal label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  display: block;
+}
+
+.quote-modal input,
+.quote-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.quote-modal textarea {
+  resize: none;
+  height: 70px;
+}
+
+.quote-total {
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.quote-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-send {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+
+
+
+
+  
 </style>
 </head>
 
@@ -213,6 +318,13 @@ iframe{
         <button class="btn btn-primary" onclick="acceptTask()">
           <i class="fas fa-check"></i> Accept Task
         </button>
+
+   <button class="primary-btn" onclick="openQuoteModal()">
+  💰 Send Quote
+</button>
+
+
+        
           <button class="btn btn-primary" onclick="openChat()">
     <i class="fas fa-comments"></i> Chat with Customer
   </button>
@@ -226,6 +338,37 @@ iframe{
   </div>
 </div>
 
+
+  
+<!-- Quote Modal -->
+<div class="quote-modal-overlay" id="quoteModal">
+  <div class="quote-modal">
+    <h2>💰 Send Price Quote</h2>
+
+    <label>Service Charge (₹) *</label>
+    <input type="number" id="serviceCharge" placeholder="e.g. 300" required>
+
+    <label>Parts Cost (₹) (optional)</label>
+    <input type="number" id="partsCost" placeholder="e.g. 1500">
+
+    <label>Estimated Reach Time (minutes)</label>
+    <input type="number" id="reachTime" placeholder="e.g. 30">
+
+    <label>Message to Customer (optional)</label>
+    <textarea placeholder="Any notes for customer..."></textarea>
+
+    <div class="quote-total">
+      Total: ₹<span id="totalAmount">0</span>
+    </div>
+
+    <div class="quote-actions">
+      <button class="btn-cancel" onclick="closeQuoteModal()">Cancel</button>
+      <button class="btn-send" onclick="sendQuote()">Send Quote</button>
+    </div>
+  </div>
+</div>
+
+  
 <script>
 const BACKEND_URL="https://swadrive-backend-2bou.onrender.com";
 const token=localStorage.getItem("token");
@@ -307,6 +450,47 @@ loadTask();
 }
 
 
+
+function openQuoteModal() {
+  document.getElementById("quoteModal").style.display = "flex";
+}
+
+function closeQuoteModal() {
+  document.getElementById("quoteModal").style.display = "none";
+}
+
+const serviceInput = document.getElementById("serviceCharge");
+const partsInput = document.getElementById("partsCost");
+
+[serviceInput, partsInput].forEach(input => {
+  input.addEventListener("input", calculateTotal);
+});
+
+function calculateTotal() {
+  const service = Number(serviceInput.value) || 0;
+  const parts = Number(partsInput.value) || 0;
+  document.getElementById("totalAmount").innerText = service + parts;
+}
+
+function sendQuote() {
+  const total = document.getElementById("totalAmount").innerText;
+
+  if (total == 0) {
+    alert("Please enter service charge");
+    return;
+  }
+
+  alert("Quote sent to customer: ₹" + total);
+  closeQuoteModal();
+
+  // Yahan API / backend call lagega
+}
+
+
+
+
+  
+
   // ---------------- OPEN CHAT ----------------
 function openChat() {
   if (!taskId) {
@@ -322,3 +506,4 @@ function openChat() {
 
 </body>
 </html>
+
