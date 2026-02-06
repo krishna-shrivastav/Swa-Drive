@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SwaDrive | Quotes from Mechanics</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .navbar {
+      background: #fff;
+      padding: 16px 28px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    }
+
+    .logo {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      text-decoration: none;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 30px auto;
+      padding: 0 16px;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+    }
+
+    .quote-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+
+    .quote-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .quote-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    .quote-info {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .accept-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .accept-btn:hover {
+      opacity: .9;
+    }
+
+    .empty {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="navbar">
+    <a href="my_tasks.html" class="logo">SwaDrive</a>
+  </div>
+
+  <div class="container">
+    <h2>🔧 Quotes from Mechanics</h2>
+    <div id="quotesList"></div>
+  </div>
+
+<script>
+  const BACKEND_URL = "https://swadrive-backend-2bou.onrender.com";
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("Login required");
+    location.href = "login.html";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const taskId = params.get("task_id");
+
+  if (!taskId) {
+    alert("Task ID missing");
+    location.href = "my_tasks.html";
+  }
+
+  async function loadQuotes() {
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/quotes?task_id=${taskId}`,
+        {
+          headers: {
+            Authorization: "Bearer " + token
+          }
+        }
+      );
+
+      const quotes = await res.json();
+      const container = document.getElementById("quotesList");
+      container.innerHTML = "";
+
+      if (!quotes.length) {
+        container.innerHTML = `
+          <div class="empty">
+            No quotes yet. Please wait for mechanics.
+          </div>
+        `;
+        return;
+      }
+
+      quotes.forEach(q => {
+        const card = document.createElement("div");
+        card.className = "quote-card";
+
+        card.innerHTML = `
+          <div class="quote-header">
+            <h3>${q.helper_name}</h3>
+            <div class="price">₹${q.price}</div>
+          </div>
+
+          <div class="quote-info">
+            ⏱ Reach time: ${q.reach_time} minutes
+          </div>
+
+          <button class="accept-btn" onclick="acceptQuote(${q.id})">
+            Accept & Book
+          </button>
+        `;
+
+        container.appendChild(card);
+      });
+
+    } catch (err) {
+      alert("Failed to load quotes");
+    }
+  }
+
+  async function acceptQuote(quoteId) {
+    if (!confirm("Confirm this mechanic for the job?")) return;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/accept-quote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({
+          quote_id: quoteId,
+          task_id: taskId
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Failed to accept quote");
+        return;
+      }
+
+      alert("✅ Mechanic booked successfully");
+      location.href = "my_tasks.html";
+
+    } catch (err) {
+      alert("Network error");
+    }
+  }
+
+  loadQuotes();
+</script>
+
+</body>
+</html>
