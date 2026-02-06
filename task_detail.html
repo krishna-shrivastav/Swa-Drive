@@ -127,7 +127,18 @@
 }
 
     
-    
+
+
+        .btn-quotes {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  border: none;
+}
+
+.btn-quotes:hover {
+  opacity: 0.9;
+}
+
     
     
     
@@ -162,11 +173,17 @@
 <button onclick="payNow()" class="btn btn-primary">
   Pay Now
 </button>
-  <div class="quotes-container">
+  <!-- <div class="quotes-container">
   <h2>🔧 Quotes from Mechanics</h2>
   <div id="quotesList"></div>
-</div>
+</div> -->
 
+<div class="actions">
+      <button class="btn btn-quotes" onclick="viewQuotes()">
+    💰 View Quotes
+  </button>
+
+</div>
     
 <script>
 const BACKEND_URL = "https://swadrive-backend-2bou.onrender.com";
@@ -691,6 +708,14 @@ async function payNow(){
 }
 
 
+function viewQuotes() {
+  if (!taskId) {
+    alert("Task ID missing");
+    return;
+  }
+
+  window.location.href = `customer_task_quotes.html?task_id=${taskId}`;
+}
 
 
     
@@ -701,6 +726,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
