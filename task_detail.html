@@ -80,23 +80,17 @@
    
     
     
-    .quotes-container {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-}
-
-.quotes-container h2 {
-  margin-bottom: 16px;
-  color: #1f2937;
+.quotes-container {
+  max-width: 700px;
+  margin: 30px auto;
 }
 
 .quote-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 20px rgba(0,0,0,.08);
 }
 
 .quote-header {
@@ -110,33 +104,24 @@
   font-size: 16px;
 }
 
-.rating {
-  font-size: 13px;
-  color: #f59e0b;
-}
-
 .price {
-  font-size: 18px;
   font-weight: 700;
   color: #2563eb;
 }
 
 .quote-info {
-  display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
+  margin: 8px 0;
   font-size: 13px;
-  color: #4b5563;
+  color: #555;
 }
 
 .accept-btn {
   width: 100%;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 8px;
   border: none;
   background: #2563eb;
   color: #fff;
-  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -177,10 +162,11 @@
 <button onclick="payNow()" class="btn btn-primary">
   Pay Now
 </button>
-    <div class="quotes-container">
-  <h2>🔧 Available Quotes</h2>
+  <div class="quotes-container">
+  <h2>🔧 Quotes from Mechanics</h2>
   <div id="quotesList"></div>
 </div>
+
     
 <script>
 const BACKEND_URL = "https://swadrive-backend-2bou.onrender.com";
@@ -418,77 +404,142 @@ function renderTasks(tasks) {
 
 
 
-function getTaskId() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("task_id");
-}
+// function getTaskId() {
+//   const params = new URLSearchParams(window.location.search);
+//   return params.get("task_id");
+// }
 
-const taskId = getTaskId();
+// const taskId = getTaskId();
 
 
-fetch(`/api/quotes?task_id=${taskId}`)
-  .then(res => res.json())
-  .then(data => renderQuotes(data))
-  .catch(err => {
-    document.getElementById("quotesList").innerHTML =
-      "<p>No quotes available yet</p>";
-  });
+// fetch(`/api/quotes?task_id=${taskId}`)
+//   .then(res => res.json())
+//   .then(data => renderQuotes(data))
+//   .catch(err => {
+//     document.getElementById("quotesList").innerHTML =
+//       "<p>No quotes available yet</p>";
+//   });
 
-function renderQuotes(quotes) {
+// function renderQuotes(quotes) {
+//   const container = document.getElementById("quotesList");
+//   container.innerHTML = "";
+
+//   if (quotes.length === 0) {
+//     container.innerHTML = "<p>No quotes yet. Please wait...</p>";
+//     return;
+//   }
+
+//   quotes.forEach(q => {
+//     const card = document.createElement("div");
+//     card.className = "quote-card";
+
+//     card.innerHTML = `
+//       <div class="quote-header">
+//         <div>
+//           <h3>${q.helper_name}</h3>
+//           <span class="rating">⭐ ${q.rating}</span>
+//         </div>
+//         <div class="price">₹${q.price}</div>
+//       </div>
+
+//       <div class="quote-info">
+//         <span>⏱ Reach: ${q.reach_time} min</span>
+//         <span>📍 ${q.distance} km away</span>
+//       </div>
+
+//       <button class="accept-btn" onclick="acceptQuote(${q.quote_id}, ${q.price})">
+//         Accept & Book
+//       </button>
+//     `;
+
+//     container.appendChild(card);
+//   });
+// }
+
+const token = localStorage.getItem("token");
+
+const params = new URLSearchParams(window.location.search);
+const taskId = params.get("task_id");
+
+async function loadQuotes() {
+  const res = await fetch(
+    `${BACKEND_URL}/api/quotes?task_id=${taskId}`,
+    {
+      headers: { Authorization: "Bearer " + token }
+    }
+  );
+
+  const quotes = await res.json();
   const container = document.getElementById("quotesList");
   container.innerHTML = "";
 
   if (quotes.length === 0) {
-    container.innerHTML = "<p>No quotes yet. Please wait...</p>";
+    container.innerHTML = "<p>No quotes yet.</p>";
     return;
   }
 
   quotes.forEach(q => {
-    const card = document.createElement("div");
-    card.className = "quote-card";
+    const div = document.createElement("div");
+    div.className = "quote-card";
 
-    card.innerHTML = `
+    div.innerHTML = `
       <div class="quote-header">
-        <div>
-          <h3>${q.helper_name}</h3>
-          <span class="rating">⭐ ${q.rating}</span>
-        </div>
+        <h3>${q.helper_name}</h3>
         <div class="price">₹${q.price}</div>
       </div>
 
       <div class="quote-info">
-        <span>⏱ Reach: ${q.reach_time} min</span>
-        <span>📍 ${q.distance} km away</span>
+        ⏱ Reach time: ${q.reach_time} min
       </div>
 
-      <button class="accept-btn" onclick="acceptQuote(${q.quote_id}, ${q.price})">
+      <button class="accept-btn"
+        onclick="acceptQuote(${q.id})">
         Accept & Book
       </button>
     `;
 
-    container.appendChild(card);
+    container.appendChild(div);
   });
 }
 
-function acceptQuote(quoteId, amount) {
-  const advance = 50;
+loadQuotes();
 
-  if (!confirm(`Total ₹${amount}\nAdvance ₹${advance}\nProceed?`)) return;
 
-  fetch("/api/accept-quote", {
+
+
+
+
+
+
+
+
+      
+async function acceptQuote(quoteId) {
+  if (!confirm("Confirm this mechanic?")) return;
+
+  const res = await fetch(`${BACKEND_URL}/api/accept-quote`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
     body: JSON.stringify({
       quote_id: quoteId,
-      advance: advance
+      task_id: taskId
     })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert("Quote accepted. Proceed to payment.");
-    // window.location.href = "/payment.html";
   });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.message || "Failed");
+    return;
+  }
+
+  alert("✅ Mechanic booked successfully");
+  window.location.href = "my_tasks.html";
 }
+
 
 
 
@@ -650,6 +701,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
