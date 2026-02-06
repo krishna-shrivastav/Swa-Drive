@@ -451,13 +451,6 @@ loadTask();
 
 
 
-function getTaskId() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("task_id");
-}
-
-const taskId = getTaskId();
-
 
 
   
@@ -491,41 +484,88 @@ function calculateTotal() {
 
 
 
-function sendQuote() {
+// function sendQuote() {
+//   const service = Number(document.getElementById("serviceCharge").value);
+//   const parts = Number(document.getElementById("partsCost").value || 0);
+//   const reach = document.getElementById("reachTime").value;
+//  const helperId = localStorage.getItem("helper_id");
+
+
+//   if (!service) {
+//     alert("Enter service charge");
+//     return;
+//   }   
+
+
+
+// const total = service + parts;
+
+
+
+  
+//   fetch(`${BACKEND_URL}/api/send-quote`, {
+
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({
+//       task_id: taskId,        // 🔥 SAME task_id
+//       total: total,
+//       reach_time: reach
+//     })
+//   })
+//   .then(res => res.json())
+//   .then(() => {
+//     alert("Quote sent to customer");
+//     closeQuoteModal();
+//   });
+// }
+
+  async function sendQuote() {
   const service = Number(document.getElementById("serviceCharge").value);
   const parts = Number(document.getElementById("partsCost").value || 0);
   const reach = document.getElementById("reachTime").value;
+  const helperId = localStorage.getItem("helper_id");
 
   if (!service) {
     alert("Enter service charge");
     return;
   }
 
-  const total = service + parts;
-
-
- if (total == 0) {
-    alert("Please enter service charge");
+  if (!reach) {
+    alert("Enter reach time");
     return;
   }
 
-  alert("Quote sent to customer: ₹" + total);
-  
+  const total = service + parts;
 
-  fetch("/api/send-quote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,        // 🔥 SAME task_id
-      total: total,
-      reach_time: reach
-    })
-  })
-  .then(res => res.json())
-  .then(() => {
-    alert("Quote sent to customer");
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/send-quote`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({
+        task_id: taskId,
+        helper_id: helperId,
+        price: total,
+        reach_time: reach
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Failed to send quote");
+      return;
+    }
+
+    alert("✅ Quote sent to customer");
     closeQuoteModal();
-  });
+
+  } catch (err) {
+    alert("❌ Network error");
+  }
 }
 
 
@@ -558,5 +598,6 @@ function openChat() {
 
 </body>
 </html>
+
 
 
