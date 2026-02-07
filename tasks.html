@@ -408,28 +408,36 @@
 
 
 
-async function loadHelperNotifications() {
-  const res = await fetch(`${BACKEND_URL}/api/notifications`, {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  });
+// async function loadHelperNotifications() {
+//   const token = localStorage.getItem("token");
+//   if (!token) return;
 
-  const notifications = await res.json();
+//   const res = await fetch(`${BACKEND_URL}/api/notifications`, {
+//     headers: {
+//       Authorization: "Bearer " + token
+//     }
+//   });
 
-  const unread = notifications.filter(n => n.is_read === 0);
-  document.getElementById("notifCount").innerText = unread.length;
+//   const notifications = await res.json();
 
-  // 🔥 instant popup for quote accepted
-  unread.forEach(n => {
-    if (n.type === "quote_accepted") {
-      alert("🎉 Quote Accepted!\nCustomer accepted your quote.");
-    }
-  });
+//   const unread = notifications.filter(n => n.is_read === 0);
+//   document.getElementById("notifCount").innerText = unread.length;
+
+//   // 🔥 instant popup for quote accepted
+//   unread.forEach(n => {
+//     if (n.type === "quote_accepted") {
+//       alert("🎉 Quote Accepted!\nCustomer accepted your quote.");
+//     }
+//   });
+// }
+
+// loadHelperNotifications();
+// setInterval(loadHelperNotifications, 15000); // every 15 sec
+
+    function toggleNotifications() {
+  alert("🔔 Notifications panel coming soon");
 }
 
-loadHelperNotifications();
-setInterval(loadHelperNotifications, 15000); // every 15 sec
 
 if (unread.some(n => n.type === "quote_accepted")) {
   document.querySelector(".my-tasks-btn").classList.add("highlight");
@@ -442,4 +450,5 @@ if (unread.some(n => n.type === "quote_accepted")) {
   </script>
 </body>
 </html>
+
 
