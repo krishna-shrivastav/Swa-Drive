@@ -423,58 +423,6 @@ function renderTasks(tasks) {
 
 
 
-// function getTaskId() {
-//   const params = new URLSearchParams(window.location.search);
-//   return params.get("task_id");
-// }
-
-// const taskId = getTaskId();
-
-
-// fetch(`/api/quotes?task_id=${taskId}`)
-//   .then(res => res.json())
-//   .then(data => renderQuotes(data))
-//   .catch(err => {
-//     document.getElementById("quotesList").innerHTML =
-//       "<p>No quotes available yet</p>";
-//   });
-
-// function renderQuotes(quotes) {
-//   const container = document.getElementById("quotesList");
-//   container.innerHTML = "";
-
-//   if (quotes.length === 0) {
-//     container.innerHTML = "<p>No quotes yet. Please wait...</p>";
-//     return;
-//   }
-
-//   quotes.forEach(q => {
-//     const card = document.createElement("div");
-//     card.className = "quote-card";
-
-//     card.innerHTML = `
-//       <div class="quote-header">
-//         <div>
-//           <h3>${q.helper_name}</h3>
-//           <span class="rating">⭐ ${q.rating}</span>
-//         </div>
-//         <div class="price">₹${q.price}</div>
-//       </div>
-
-//       <div class="quote-info">
-//         <span>⏱ Reach: ${q.reach_time} min</span>
-//         <span>📍 ${q.distance} km away</span>
-//       </div>
-
-//       <button class="accept-btn" onclick="acceptQuote(${q.quote_id}, ${q.price})">
-//         Accept & Book
-//       </button>
-//     `;
-
-//     container.appendChild(card);
-//   });
-// }
-
 const token = localStorage.getItem("token");
 
 const params = new URLSearchParams(window.location.search);
@@ -728,6 +676,7 @@ loadTasks();
 
 </body>
 </html>
+
 
 
 
