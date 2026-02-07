@@ -114,6 +114,33 @@
     @media (min-width: 769px) {
       .mobile-menu-btn { display: none; }
     }
+
+
+.notif-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+.highlight {
+  background: #22c55e;
+  color: white;
+}
+
+    
   </style>
 </head>
 <body>
@@ -129,6 +156,12 @@
       <a href="Home.html" class="nav-link">How It Works</a>
       <a href="tasks.html" class="nav-link active highlight"><i class="fas fa-clipboard-list"></i> Find Tasks</a>
     </div>
+    <div class="nav-right">
+  <button class="notif-btn" onclick="toggleNotifications()">
+    🔔 <span id="notifCount" class="notif-badge">0</span>
+  </button>
+</div>
+
     <div class="user-menu">
       <div class="user-avatar">KS</div>
       <i class="fas fa-chevron-down" style="font-size: 0.7rem; color: var(--text-light);"></i>
@@ -373,8 +406,40 @@
       });
     });
 
+
+
+async function loadHelperNotifications() {
+  const res = await fetch(`${BACKEND_URL}/api/notifications`, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  const notifications = await res.json();
+
+  const unread = notifications.filter(n => n.is_read === 0);
+  document.getElementById("notifCount").innerText = unread.length;
+
+  // 🔥 instant popup for quote accepted
+  unread.forEach(n => {
+    if (n.type === "quote_accepted") {
+      alert("🎉 Quote Accepted!\nCustomer accepted your quote.");
+    }
+  });
+}
+
+loadHelperNotifications();
+setInterval(loadHelperNotifications, 15000); // every 15 sec
+
+if (unread.some(n => n.type === "quote_accepted")) {
+  document.querySelector(".my-tasks-btn").classList.add("highlight");
+}
+
+    
+
     // INIT
     loadOpenTasks();
   </script>
 </body>
 </html>
+
